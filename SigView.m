@@ -177,7 +177,7 @@ function timer_Callback(hObj, event, handles)
     timeCalcSpec = 1000; % milisec
     %  ****
     
-    pointCalcSpec = ceil(timeCalcSpec/1000*Fs)
+    pointCalcSpec = ceil(timeCalcSpec/1000*Fs);
     
     if isempty(wind), wind = zeros(1, pointCalcSpec); end
 
@@ -191,6 +191,94 @@ function timer_Callback(hObj, event, handles)
     time = get(h_plot1, 'XData');
     volt = get(h_plot1, 'YData');
     
+    % WHILE starts here
+    tStart = tic;
+    % ---------- Automatically adjust horizontal axes -----
+    if count == sec*Fs
+        count = 1;
+        timeShift = timeShift+ sec;
+        set(h_axes1, 'xtick', [0:Fs:sec*Fs], 'xticklabel', [timeShift:(timeShift+sec)]);
+    end
+
+    % --------------- Import data -----------------------
+    try
+        a = fscanf(s,'%s');
+    catch % should be a better (more specific) error-catching here
+%                 break;  % if while is used
+        return; % if timer is used
+    end
+
+    try
+        if length(a) < 10
+            a = strcat(num2str(zeros(1,10-length(a))), a);
+        end
+        voltage = bin2dec(a)/1023*5;
+%                 voltage = a;
+%                 twos2dec(a)
+%                 voltage = twos2dec(a)/511*5;
+        wind(point) = voltage;
+        point = point + 1;
+
+        %  -------- Calculate power spectrum -----------------
+        if point == pointCalcSpec % calculation is only performed when the time comes
+            wind = wind - sign(mean(wind))*abs(mean(wind));
+            [sp, f] = PowerSpect(wind, Fs);             % Calc power spectrum
+            assignin('base', 'myf', f);
+            assignin('base', 'mysp', sp);
+            set(h_plot2, 'XData',  f(1:floor(freqLim/2-1)), 'YData', sp(1:floor(freqLim/2-1)));
+            point = 1;
+
+            % --------- Calculate and display Heart Rate ---------------
+            heartRate = f(find(sp == max(sp)));
+            set(h_text, 'String', num2str(heartRate), ...
+                'FontSize', 30, ...
+                'FontWeight', 'bold')                    
+        end
+
+    catch e
+        warning('warning: something is not working probably');
+        wind = wind - sign(mean(wind))*abs(mean(wind));
+        assignin('base', 'myf', f);
+        [sp, f] = PowerSpect(wind, Fs);
+        assignin('base', 'mysp', sp);
+        set(h_plot2, 'XData', f(1:floor(freqLim/2-1)), 'YData', sp(1:floor(freqLim/2-1)));
+        point = 1;
+
+        % --------- Calculate and display Heart Rate ---------------
+        heartRate = f(find(sp == max(sp)));
+        set(h_text, 'String', num2str(heartRate), ...
+            'FontSize', 30, ...
+            'FontWeight', 'bold') 
+    end
+%             disp(s.BytesAvailable) 
+
+
+    % --------------- Update plot -----------------------
+    time(count) = count;
+    volt(count) = voltage(1);
+    set(h_plot1, 'XData', time, 'YData', volt);
+    set(h_line, 'XData', [count, count]);
+
+    % Update Y axes
+    if count > 50
+        window = volt(count-50:count);
+        set(h_axes1, 'Ylim', [(min(window)-0.5) (max(window)+0.5)]);
+    end
+
+
+    % --------- Write data to file -----------------
+
+
+    % -------- Finishing --------------------------
+    count = count + 1;
+    drawnow;    % update events (stop button)
+    tElapsed = toc(tStart)*1000
+end
+
+function startButton_Callback(hObj, event, handles)
+    s = handles.serialPort;
+    t = handles.t;
+    
     % Open port
     if strcmp(get(s, 'Status'), 'open')
         disp('Port is already opened');
@@ -198,106 +286,9 @@ function timer_Callback(hObj, event, handles)
         fopen(s);
         disp('Port is opened. Importing data');
         handles.stop = 0;
-        
-        while 1
-            tStart = tic;
-            % ---------- Automatically adjust horizontal axes -----
-            if count == sec*Fs
-                count = 1;
-                timeShift = timeShift+ sec;
-                set(h_axes1, 'xtick', [0:Fs:sec*Fs], 'xticklabel', [timeShift:(timeShift+sec)]);
-            end
-            
-            % --------------- Import data -----------------------
-            try
-                a = fscanf(s,'%s');
-            catch % should be a better (more specific) error-catching here
-                break;
-            end
-            
-            try
-                if length(a) < 10
-                    a = strcat(num2str(zeros(1,10-length(a))), a);
-                end
-                voltage = bin2dec(a)/1023*5;
-%                 voltage = a;
-%                 twos2dec(a)
-%                 voltage = twos2dec(a)/511*5;
-                wind(point) = voltage;
-                point = point + 1;
-                
-                %  -------- Calculate power spectrum -----------------
-                if point == pointCalcSpec % calculation is only performed when the time comes
-                    wind = wind - sign(mean(wind))*abs(mean(wind));
-                    [sp, f] = PowerSpect(wind, Fs);             % Calc power spectrum
-                    assignin('base', 'myf', f);
-                    assignin('base', 'mysp', sp);
-                    set(h_plot2, 'XData',  f(1:floor(freqLim/2-1)), 'YData', sp(1:floor(freqLim/2-1)));
-                    point = 1;
-                    
-                    % --------- Calculate and display Heart Rate ---------------
-                    heartRate = f(find(sp == max(sp)));
-                    set(h_text, 'String', num2str(heartRate), ...
-                        'FontSize', 30, ...
-                        'FontWeight', 'bold')                    
-                end
-                
-            catch e
-                warning('warning: something is not working probably');
-                wind = wind - sign(mean(wind))*abs(mean(wind));
-                assignin('base', 'myf', f);
-                [sp, f] = PowerSpect(wind, Fs);
-                assignin('base', 'mysp', sp);
-                set(h_plot2, 'XData', f(1:floor(freqLim/2-1)), 'YData', sp(1:floor(freqLim/2-1)));
-%                 set(h_plot2, 'XData', f, 'YData', sp(:,1));
-
-                point = 1;
-                    
-                % --------- Calculate and display Heart Rate ---------------
-                heartRate = f(find(sp == max(sp)));
-                
-                set(h_text, 'String', num2str(heartRate), ...
-                    'FontSize', 30, ...
-                    'FontWeight', 'bold') 
-                
-                
-                continue;
-            end
-%             disp(s.BytesAvailable) 
-               
-            
-            % --------------- Update plot -----------------------
-            % First approach
-            time(count) = count;
-            volt(count) = voltage(1);
-            set(h_plot1, 'XData', time, 'YData', volt);
-            set(h_line, 'XData', [count, count]);
-            
-            % Update Y axes
-            if count > 50
-                window = volt(count-50:count);
-                set(h_axes1, 'Ylim', [(min(window)-0.5) (max(window)+0.5)]);
-            end
-            
-            
-            % --------- Write data to file -----------------
-            
-            
-            % Sencond approach
-%             volt = voltage;
-%             plot([count-1 count], [lastvolt volt], 'g.-');
-            count = count + 1;
-%             lastvolt = voltage;
-            
-            
-            drawnow;    % update events (stop button)
-            tElapsed = toc(tStart)*1000
-        end   % while       
-    end % if
-end
-
-function startButton_Callback(hObj, event, handles)
-    t = handles.t;
+    end
+    
+    % Start timer
     if strcmp(get(t, 'Running'), 'on')
        disp('Timer is already running.');
     else
@@ -309,6 +300,7 @@ end % stopButton function
 function stopButton_Callback(hObj, event, handles)
     s = handles.serialPort;
     t = handles.t;
+    
     % Stop timer
     if strcmp(get(t, 'Running'), 'on')
         disp('Timer is running. Stop now');
@@ -331,11 +323,18 @@ function deleteFigure_Callback(hObj, event, handles)
     s = handles.serialPort;
     t = handles.t;
     
+    % Close and delete port
     if strcmp(get(s, 'Status'), 'open')
         disp('Port is still open. Now closing the port');
         fclose(s);
     end
     delete(s)
+    
+    % Stop and delete timer
+    if strcmp(get(t, 'Running'), 'on')
+        disp('Timer is running. Stop now');
+        stop(t);
+    end
     delete(t)
 end
 
