@@ -226,7 +226,7 @@ function startButton_Callback(hObj, event, handles)
                 %  -------- Calculate power spectrum -----------------
                 if point == pointCalcSpec % calculation is only performed when the time comes
                     wind = wind - sign(mean(wind))*abs(mean(wind));
-                    [sp,f,t] = spectog(wind, floor(Fs*2), Fs, floor(Fs/2));   
+                    [sp, f] = PowerSpect(wind, Fs);             % Calc power spectrum
                     set(h_plot2, 'XData', f(1:freqLim), 'YData', sp(1:freqLim));
                     point = 1;
                     
@@ -240,7 +240,7 @@ function startButton_Callback(hObj, event, handles)
             catch e
                 warning('warning: something is not working probably');
                 wind = wind - sign(mean(wind))*abs(mean(wind));
-                [sp,f,t] = spectog(wind, floor(Fs*2), Fs, floor(Fs/16));   
+                [sp, f] = PowerSpect(wind, Fs);
                 set(h_plot2, 'XData', f(1:freqLim), 'YData', sp(1:freqLim));
 %                 set(h_plot2, 'XData', f, 'YData', sp(:,1));
 
