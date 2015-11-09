@@ -25,6 +25,12 @@ set(s, 'Timeout', 2);
     
 handles.serialPort = s;
 
+%% Creat timer   
+Fs = str2double(answer{2});
+t = timer('ExecutionMode', 'fixedRate',...
+    'Period', 1/Fs);
+handles.t = t;      % update handles, timer added
+
 %%  --------  Create simple GUI ------------
 % Figure
 h_fig = figure('name', 'SimpleGui', ....
@@ -38,7 +44,6 @@ h_axes1 = axes('Parent', h_fig, ...
             'YGrid', 'on', ...
             'XGrid', 'on');
 
-Fs = str2double(answer{2});
 sec = 3;           % time limit
 timepoints = sec*Fs;
 
@@ -137,17 +142,14 @@ handles.h_plots.freqLim = freqLim;  % for axes2 (frequency)
 
 handles.Fs = Fs;
 
+% Declare callback functions
 set(startButton, 'Callback', {@startButton_Callback, handles});
 set(stopButton, 'Callback', {@stopButton_Callback, handles});
-    
-%% Creat timer   
-%  t = timer('TimerFcn', {@timer_Callback, serialPort}, ...
-%     'ExecutionMode', 'fixedRate',...
-%     'Period', 0.5);
+set(t, 'TimerFcn', {@timer_Callback, handles});
 
 end
 
-function startButton_Callback(hObj, event, handles)
+function timer_Callback(hObj, event, handles)
     persistent count time volt lastvolt
     persistent timeShift
     persistent wind         % sample to calculate power spectrum
@@ -292,10 +294,28 @@ function startButton_Callback(hObj, event, handles)
             tElapsed = toc(tStart)*1000
         end   % while       
     end % if
+end
+
+function startButton_Callback(hObj, event, handles)
+    t = handles.t;
+    if strcmp(get(t, 'Running'), 'on')
+       disp('Timer is already running.');
+    else
+        start(t);
+    end
+    
 end % stopButton function
 
 function stopButton_Callback(hObj, event, handles)
-     s = handles.serialPort;
+    s = handles.serialPort;
+    t = handles.t;
+    % Stop timer
+    if strcmp(get(t, 'Running'), 'on')
+        disp('Timer is running. Stop now');
+        stop(t);
+    else
+        disp('Timer has been stopped');
+    end
     
     % Close port
     if strcmp(get(s, 'Status'), 'closed')
@@ -309,12 +329,14 @@ end
 
 function deleteFigure_Callback(hObj, event, handles)
     s = handles.serialPort;
+    t = handles.t;
     
     if strcmp(get(s, 'Status'), 'open')
         disp('Port is still open. Now closing the port');
         fclose(s);
     end
     delete(s)
+    delete(t)
 end
 
 
