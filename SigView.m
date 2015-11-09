@@ -10,7 +10,7 @@ function SigView()
 
 %% Create input dialog, enter port name and sampling frequency
 prompt = {'Enter port name: ', 'Enter sampling frequency: '};
-def = {'COM8', '100'};
+def = {'COM7', '100'};
 answer = inputdlg(prompt, 'Input', 1, def);
 
 if isempty(answer)
@@ -73,7 +73,7 @@ h_axes2 = axes('Parent', h_fig, ...
 % Intial plot
 freqLim = 100;
 hold on;
-h_plot2 = plot(1:freqLim, zeros(1, freqLim));
+h_plot2 = plot(1:floor(freqLim/2-1), zeros(1, floor(freqLim/2-1)));
 
 % Vertical lim
 ylim(h_axes1, [0 100]);
@@ -198,6 +198,7 @@ function startButton_Callback(hObj, event, handles)
         handles.stop = 0;
         
         while 1
+            tStart = tic;
             % ---------- Automatically adjust horizontal axes -----
             if count == sec*Fs
                 count = 1;
@@ -227,7 +228,9 @@ function startButton_Callback(hObj, event, handles)
                 if point == pointCalcSpec % calculation is only performed when the time comes
                     wind = wind - sign(mean(wind))*abs(mean(wind));
                     [sp, f] = PowerSpect(wind, Fs);             % Calc power spectrum
-                    set(h_plot2, 'XData', f(1:freqLim), 'YData', sp(1:freqLim));
+                    assignin('base', 'myf', f);
+                    assignin('base', 'mysp', sp);
+                    set(h_plot2, 'XData',  f(1:floor(freqLim/2-1)), 'YData', sp(1:floor(freqLim/2-1)));
                     point = 1;
                     
                     % --------- Calculate and display Heart Rate ---------------
@@ -240,8 +243,10 @@ function startButton_Callback(hObj, event, handles)
             catch e
                 warning('warning: something is not working probably');
                 wind = wind - sign(mean(wind))*abs(mean(wind));
+                assignin('base', 'myf', f);
                 [sp, f] = PowerSpect(wind, Fs);
-                set(h_plot2, 'XData', f(1:freqLim), 'YData', sp(1:freqLim));
+                assignin('base', 'mysp', sp);
+                set(h_plot2, 'XData', f(1:floor(freqLim/2-1)), 'YData', sp(1:floor(freqLim/2-1)));
 %                 set(h_plot2, 'XData', f, 'YData', sp(:,1));
 
                 point = 1;
@@ -284,6 +289,7 @@ function startButton_Callback(hObj, event, handles)
             
             
             drawnow;    % update events (stop button)
+            tElapsed = toc(tStart)*1000
         end   % while       
     end % if
 end % stopButton function
