@@ -8,6 +8,10 @@ function SigView()
 %  21/10/15     //              Add signal plot, resolve real-time problem, lagging remains
 %  27/10/15     //              Add power spectrum plot and heart rate display
 
+% Initializing
+clear all
+close all
+
 %% Create input dialog, enter port name and sampling frequency
 prompt = {'Enter port name: ', 'Enter sampling frequency: '};
 def = {'COM7', '100'};
@@ -140,6 +144,7 @@ handles.h_text = h_text;
 handles.h_plots.sec = sec;          % for axes1 (time)
 handles.h_plots.freqLim = freqLim;  % for axes2 (frequency)
 
+handles.count = 4;
 handles.Fs = Fs;
 
 % Declare callback functions
@@ -149,19 +154,23 @@ set(t, 'TimerFcn', {@timer_Callback, handles});
 
 end
 
+%% ---------------------------------------------------------- %%
 function timer_Callback(hObj, event, handles)
-    persistent count time volt lastvolt
+    persistent count 
+    persistent time volt lastvolt voltage
     persistent timeShift
     persistent wind         % sample to calculate power spectrum
     persistent sp f t point
     
     if isempty(lastvolt), lastvolt = nan; end  
     if isempty(point), point = 1; end    
-    %
-    s = handles.serialPort;
-    name = get(s, 'Name');
-    disp(['Port name ' name]);
+    if isempty(voltage), voltage = 1; end   
+    if isempty(count), count = 6; end    
+
+ 
+    s = handles.serialPort;     % serial port object
     
+%     count = handles.count;
     % return handles
     h_axes1 = handles.h_axes.axes1;
     h_plot1 = handles.h_plots.plot1;
@@ -174,10 +183,14 @@ function timer_Callback(hObj, event, handles)
     Fs = handles.Fs;
     
     %  **** Changable variable
-    timeCalcSpec = 1000; % milisec
+%     timeCalcSpec = 1000; % milisec, time for every power spectrum calculation
+    timeCalcSpec = 1; % second, time for every power spectrum calculation
+
     %  ****
     
-    pointCalcSpec = ceil(timeCalcSpec/1000*Fs);
+%     pointCalcSpec = round(timeCalcSpec/1000*Fs);
+    pointCalcSpec = round(timeCalcSpec*Fs);
+
     
     if isempty(wind), wind = zeros(1, pointCalcSpec); end
 
@@ -187,7 +200,7 @@ function timer_Callback(hObj, event, handles)
     end
     
     %
-    count = 2;
+%     count = 2;
     time = get(h_plot1, 'XData');
     volt = get(h_plot1, 'YData');
     
@@ -224,7 +237,7 @@ function timer_Callback(hObj, event, handles)
             wind = wind - sign(mean(wind))*abs(mean(wind));
             [sp, f] = PowerSpect(wind, Fs);             % Calc power spectrum
             assignin('base', 'myf', f);
-            assignin('base', 'mysp', sp);
+%             assignin('base', 'mysp', sp);
             set(h_plot2, 'XData',  f(1:floor(freqLim/2-1)), 'YData', sp(1:floor(freqLim/2-1)));
             point = 1;
 
@@ -236,11 +249,11 @@ function timer_Callback(hObj, event, handles)
         end
 
     catch e
-        warning('warning: something is not working probably');
+        warning('warning: something is not working properly');
         wind = wind - sign(mean(wind))*abs(mean(wind));
-        assignin('base', 'myf', f);
+%         assignin('base', 'myf', f);
         [sp, f] = PowerSpect(wind, Fs);
-        assignin('base', 'mysp', sp);
+%         assignin('base', 'mysp', sp);
         set(h_plot2, 'XData', f(1:floor(freqLim/2-1)), 'YData', sp(1:floor(freqLim/2-1)));
         point = 1;
 
@@ -271,13 +284,18 @@ function timer_Callback(hObj, event, handles)
 
     % -------- Finishing --------------------------
     count = count + 1;
+%     handles.count = count;
     drawnow;    % update events (stop button)
-    tElapsed = toc(tStart)*1000
+    tElapsed = toc(tStart)*1000;
 end
 
+%% ------------------------------------------------------------ %%
 function startButton_Callback(hObj, event, handles)
     s = handles.serialPort;
     t = handles.t;
+   
+    name = get(s, 'Name');
+    disp(['Port name ' name]);
     
     % Open port
     if strcmp(get(s, 'Status'), 'open')
@@ -292,14 +310,20 @@ function startButton_Callback(hObj, event, handles)
     if strcmp(get(t, 'Running'), 'on')
        disp('Timer is already running.');
     else
-        start(t);
+        try
+            start(t);
+        catch
+            disp('Starting t has problem');
+        end
     end
     
 end % stopButton function
 
+%% ------------------------------------------------------------ %%
 function stopButton_Callback(hObj, event, handles)
     s = handles.serialPort;
     t = handles.t;
+    
     
     % Stop timer
     if strcmp(get(t, 'Running'), 'on')
@@ -319,6 +343,7 @@ function stopButton_Callback(hObj, event, handles)
     
 end
 
+%% ----------------------------------------------------------- %%
 function deleteFigure_Callback(hObj, event, handles)
     s = handles.serialPort;
     t = handles.t;
