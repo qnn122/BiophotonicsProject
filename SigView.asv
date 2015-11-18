@@ -323,8 +323,7 @@ function startButton_Callback(hObj, event, handles)
             if point ~= buffSize
                 set(h_text3, 'String', 'Please wait...');
             else
-                set(h_text3, 'String', 'OK, importing data');
-                firstTime = 1;
+                set(h_text3, 'String', 'Re
             end
                 
             drawnow;    % update events (stop button)
