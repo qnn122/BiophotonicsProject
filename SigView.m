@@ -286,7 +286,8 @@ function timer_Callback(hObj, event, handles)
     count = count + 1;
 %     handles.count = count;
     drawnow;    % update events (stop button)
-    tElapsed = toc(tStart)*1000;
+    tElapsed = toc(tStart)*1000
+    s.BytesAvailable
 end
 
 %% ------------------------------------------------------------ %%
