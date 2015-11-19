@@ -13,7 +13,7 @@ close all
 
 %% Create input dialog, enter port name and sampling frequency
 prompt = {'Enter port name: ', 'Enter sampling frequency: '};
-def = {'COM7', '100'};
+def = {'COM8', '100'};
 answer = inputdlg(prompt, 'Input', 1, def);
 
 if isempty(answer)
@@ -24,6 +24,10 @@ end
 %% Create Serial Port
 PortName = answer{1};
 s = serial(PortName);
+% set(s,'DataBits', 8);
+% set(s,'StopBits', 1);
+% s.ReadAsyncMode = 'continuous';
+
 set(s, 'Timeout', 2);
     
 handles.serialPort = s;
@@ -203,7 +207,7 @@ function startButton_Callback(hObj, event, handles)
     %  ****
     
     % Buffer window
-    buffsize = 2*Fs;    % a*Fs, a is the number of seconds
+    buffsize = 5*Fs;    % a*Fs, a is the number of seconds
     if isempty(buffer), buffer = zeros(1, buffsize); end
     if isempty(wind), wind = zeros(1, buffsize); end    % buffer and wind has same size but
                                                         % different
@@ -236,28 +240,28 @@ function startButton_Callback(hObj, event, handles)
                 set(h_axes1, 'xtick', [0:Fs:sec*Fs], 'xticklabel', [timeShift:(timeShift+sec)]);
             end
             
-            % --------------- Import data -----------------------
+            % --------------- Import data -----------------------    
             try
-                a = fscanf(s,'%s');
-            catch % should be a better (more specific) error-catching here
+                a = fscanf(s,'%s');     % read from Arduino
+                assignin('base', 'mya', a);  
+            catch
                 break;
             end
             
+            % Detect weird string stored in a, ignore such value
+            if isempty(str2num(a))
+                    continue;
+            end
+            
             try
-                if length(a) < 10
-                    a = strcat(num2str(zeros(1,10-length(a))), a);
-                end
-                voltage = bin2dec(a)/1023*5;
-%                 voltage = a;
-%                 twos2dec(a)
-%                 voltage = twos2dec(a)/511*5;
+                voltage = str2num(a);
                 buffer(point) = voltage;
                 
                 %  -------- Calculate power spectrum -----------------
                 if (rem(abs(point-indx),pointCalcSpec)==0)&&(firstTime == 1)    % calculation is only performed when the time comes
                     wind = [buffer(indx:end) buffer(1:(indx-1))];
-                    wind = wind - sign(mean(wind))*abs(mean(wind));     % Remove DC component
-                    [sp, f] = PowerSpect(wind, Fs);                           % Calc power spectrum   
+                    wind = wind - sign(mean(wind))*abs(mean(wind));             % Remove DC component
+                    [sp, f] = PowerSpect(wind, Fs);                             % Calc power spectrum   
                     assignin('base', 'myf', f);
                     assignin('base', 'mysp', sp);
                     set(h_plot2, 'XData',  f(1:floor(freqLim/2-1)), 'YData', sp(1:floor(freqLim/2-1)));
@@ -273,7 +277,7 @@ function startButton_Callback(hObj, event, handles)
                 % Reset point pointer every time it finishes filling the buffer
                 if (point ~= buffsize) 
                     point = point + 1;
-                else % point reaches buffsize
+                else    % point reaches buffsize
                     % SWITCH flag when the first round of buffer is filled
                     if (firstTime ~= 1)
                         set(h_text3, 'String', 'OK, importing data');
@@ -284,27 +288,9 @@ function startButton_Callback(hObj, event, handles)
                 
             catch e
                 warning('warning: something is not working probably');
-%                 wind = wind - sign(mean(wind))*abs(mean(wind));
-%                 assignin('base', 'myf', f);
-%                 [sp, f] = PowerSpect(wind, Fs);
-%                 assignin('base', 'mysp', sp);
-%                 set(h_plot2, 'XData', f(1:floor(freqLim/2-1)), 'YData', sp(1:floor(freqLim/2-1)));
-% 
-%                 point = 1;
-%                     
-%                 % --------- Calculate and display Heart Rate ---------------
-%                 heartRate = 60*f(find(sp == max(sp)));
-%                 
-%                 set(h_text, 'String', num2str(heartRate), ...
-%                     'FontSize', 30, ...
-%                     'FontWeight', 'bold') 
                 pause(1.5);
                 continue;
-%                 return;
-                
-%                 continue;
             end
-%             disp(s.BytesAvailable) 
                
             
             % --------------- Update plot -----------------------
@@ -322,13 +308,7 @@ function startButton_Callback(hObj, event, handles)
             
             
             % --------- Write data to file -----------------
-            
-            
-            % Sencond approach
-%             volt = voltage;
-%             plot([count-1 count], [lastvolt volt], 'g.-');
             count = count + 1;
-%             lastvolt = voltage;
             
 %             tElapsed = toc(tStart)*1000
 %             disp(['Bytes Available: ' num2str(s.BytesAvailable)]);
