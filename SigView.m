@@ -128,9 +128,9 @@ h_text2 = uicontrol('Parent', h_fig, ...
         
 h_text3 = uicontrol('Parent', h_fig, ...
             'Units', 'normalized',...
-            'Position', [.75 .1 .15 .05],...
+            'Position', [.75 .1 .15 .1],...
             'Style', 'text',...
-            'String', 'STATUS',...
+            'String', 'Initializing... Please wait.',...
             'FontSize', 10, ...
             'FontWeight', 'bold', ...
             'BackgroundColor', [1 1 1]);            
@@ -161,14 +161,18 @@ set(stopButton, 'Callback', {@stopButton_Callback, handles});
 end
 
 function startButton_Callback(hObj, event, handles)
-    persistent count time volt lastvolt
+    persistent count time volt lastvolt     % Count is used for automatically adjust horizontall axes
     persistent timeShift
-    persistent wind         % Sample to calculate power spectrum
-    persistent sp f t 
+    
+    % For storing data
+    persistent buffer  buffsize     % Buffer to store incoming data
     persistent point        % Index of buffer, update new data to buffer
-    persistent indx         % Index of power spectrum calculation
     persistent firstTime    % Flag that labels whether the first round of buffer has been filled or not
-    persistent tStart tElapsed
+    persistent wind         % window to calculate power spectrum
+    persistent indx         % Index of power spectrum calculation
+
+    persistent sp f t       % for power spectrum calculation
+    persistent tStart tElapsed      % For timing
     
     % Initializing variables
     if isempty(lastvolt), lastvolt = nan; end  
@@ -193,18 +197,17 @@ function startButton_Callback(hObj, event, handles)
     freqLim = handles.h_plots.freqLim;
     Fs = handles.Fs;
     
-    
-    % Initializing buffer
-    buffsize = 4*Fs;    % a*Fs, a is the number of seconds
-    if isempty(buffer), buffer = zeros(1, buffsize); end
-    
     %  **** Changable variable
     timeCalcSpec = 1; % time duration after which the power spectrum takes place (second)
     pointCalcSpec = ceil(timeCalcSpec*Fs); % number of points after which the ps is calculated
     %  ****
     
     % Buffer window
-    if isempty(wind), wind = zeros(1, pointCalcSpec); end
+    buffsize = 2*Fs;    % a*Fs, a is the number of seconds
+    if isempty(buffer), buffer = zeros(1, buffsize); end
+    if isempty(wind), wind = zeros(1, buffsize); end    % buffer and wind has same size but
+                                                        % different
+                                                        % functions
 
     % 
     if isempty(timeShift)
@@ -248,23 +251,35 @@ function startButton_Callback(hObj, event, handles)
 %                 voltage = a;
 %                 twos2dec(a)
 %                 voltage = twos2dec(a)/511*5;
-                wind(point) = voltage;
-                point = point + 1;
+                buffer(point) = voltage;
                 
                 %  -------- Calculate power spectrum -----------------
-                if point == pointCalcSpec % calculation is only performed when the time comes
-                    wind = wind - sign(mean(wind))*abs(mean(wind)); % Remove DC component
-                    [sp, f] = PowerSpect(wind, Fs);                 % Calc power spectrum   
+                if (rem(abs(point-indx),pointCalcSpec)==0)&&(firstTime == 1)    % calculation is only performed when the time comes
+                    wind = [buffer(indx:end) buffer(1:(indx-1))];
+                    wind = wind - sign(mean(wind))*abs(mean(wind));     % Remove DC component
+                    [sp, f] = PowerSpect(wind, Fs);                           % Calc power spectrum   
                     assignin('base', 'myf', f);
                     assignin('base', 'mysp', sp);
                     set(h_plot2, 'XData',  f(1:floor(freqLim/2-1)), 'YData', sp(1:floor(freqLim/2-1)));
-                    point = 1;
+                    indx = point;   % Update index
                     
                     % --------- Calculate and display Heart Rate ---------------
                     heartRate = 60*f(find(sp == max(sp)));
                     set(h_text, 'String', num2str(heartRate), ...
                         'FontSize', 30, ...
                         'FontWeight', 'bold')                    
+                end
+
+                % Reset point pointer every time it finishes filling the buffer
+                if (point ~= buffsize) 
+                    point = point + 1;
+                else % point reaches buffsize
+                    % SWITCH flag when the first round of buffer is filled
+                    if (firstTime ~= 1)
+                        set(h_text3, 'String', 'OK, importing data');
+                        firstTime = 1;
+                    end
+                point = 1; % reset
                 end
                 
             catch e
@@ -283,7 +298,9 @@ function startButton_Callback(hObj, event, handles)
 %                 set(h_text, 'String', num2str(heartRate), ...
 %                     'FontSize', 30, ...
 %                     'FontWeight', 'bold') 
-                return;
+                pause(1.5);
+                continue;
+%                 return;
                 
 %                 continue;
             end
@@ -313,19 +330,11 @@ function startButton_Callback(hObj, event, handles)
             count = count + 1;
 %             lastvolt = voltage;
             
-            tElapsed = toc(tStart)*1000
-            disp(['Bytes Available: ' num2str(s.BytesAvailable)]);
-            disp(['Bytes To Output: ' num2str(s.BytesToOutput)]);
-            assignin('base', 'BytesToOutput', s.BytesToOutput);
+%             tElapsed = toc(tStart)*1000
+%             disp(['Bytes Available: ' num2str(s.BytesAvailable)]);
+%             disp(['Bytes To Output: ' num2str(s.BytesToOutput)]);
+%             assignin('base', 'BytesToOutput', s.BytesToOutput);
             
-            
-            % SWITCH flag when the first round of buffer is filled
-            if point ~= buffSize
-                set(h_text3, 'String', 'Please wait...');
-            else
-                set(h_text3, 'String', 'OK, importing data');
-                firstTime = 1;
-            end
                 
             drawnow;    % update events (stop button)
         end   % while       
