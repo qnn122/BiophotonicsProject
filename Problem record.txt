@@ -1,0 +1,8 @@
+	Problem				Status 		Compensation
+	******* 			****** 		************
+20/11:- How to check whether the 	Unsolved 	Compare with verified products (OMRON)
+	calculated heart rate is
+	correct?
+      - Analog offset 			Unsolved 	Redesign the circuit
+      - Measure the data-receiving rate Unsolved 	Write m file
+	of MATLAB 
