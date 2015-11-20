@@ -8,9 +8,12 @@ function SigView()
 %  21/10/15     //              Add signal plot, resolve real-time problem, lagging remains
 %  27/10/15     //              Add power spectrum plot and heart rate display
 
+clear all
+close all
+
 %% Create input dialog, enter port name and sampling frequency
 prompt = {'Enter port name: ', 'Enter sampling frequency: '};
-def = {'COM7', '100'};
+def = {'COM8', '100'};
 answer = inputdlg(prompt, 'Input', 1, def);
 
 if isempty(answer)
@@ -21,15 +24,13 @@ end
 %% Create Serial Port
 PortName = answer{1};
 s = serial(PortName);
+% set(s,'DataBits', 8);
+% set(s,'StopBits', 1);
+% s.ReadAsyncMode = 'continuous';
+
 set(s, 'Timeout', 2);
     
 handles.serialPort = s;
-
-%% Creat timer   
-Fs = str2double(answer{2});
-t = timer('ExecutionMode', 'fixedRate',...
-    'Period', 1/Fs);
-handles.t = t;      % update handles, timer added
 
 %%  --------  Create simple GUI ------------
 % Figure
@@ -44,6 +45,7 @@ h_axes1 = axes('Parent', h_fig, ...
             'YGrid', 'on', ...
             'XGrid', 'on');
 
+Fs = str2double(answer{2});
 sec = 3;           % time limit
 timepoints = sec*Fs;
 
@@ -126,7 +128,16 @@ h_text2 = uicontrol('Parent', h_fig, ...
             'String', 'HEART RATE',...
             'FontSize', 10, ...
             'FontWeight', 'bold', ...
-            'BackgroundColor', [1 1 1]);      
+            'BackgroundColor', [1 1 1]);   
+        
+h_text3 = uicontrol('Parent', h_fig, ...
+            'Units', 'normalized',...
+            'Position', [.75 .1 .15 .1],...
+            'Style', 'text',...
+            'String', 'Initializing... Please wait.',...
+            'FontSize', 10, ...
+            'FontWeight', 'bold', ...
+            'BackgroundColor', [1 1 1]);            
         
 %% Update handles
 handles.h_axes.axes1 = h_axes1;
@@ -137,26 +148,42 @@ handles.h_plots.plot2 = h_plot2;
 handles.h_plots.line = h_line;
 
 handles.h_text = h_text;
+handles.h_text3 = h_text3;
 handles.h_plots.sec = sec;          % for axes1 (time)
 handles.h_plots.freqLim = freqLim;  % for axes2 (frequency)
 
 handles.Fs = Fs;
 
-% Declare callback functions
 set(startButton, 'Callback', {@startButton_Callback, handles});
 set(stopButton, 'Callback', {@stopButton_Callback, handles});
-set(t, 'TimerFcn', {@timer_Callback, handles});
+    
+%% Creat timer   
+%  t = timer('TimerFcn', {@timer_Callback, serialPort}, ...
+%     'ExecutionMode', 'fixedRate',...
+%     'Period', 0.5);
 
 end
 
-function timer_Callback(hObj, event, handles)
-    persistent count time volt lastvolt
+function startButton_Callback(hObj, event, handles)
+    persistent count time volt lastvolt     % Count is used for automatically adjust horizontall axes
     persistent timeShift
-    persistent wind         % sample to calculate power spectrum
-    persistent sp f t point
     
+    % For storing data
+    persistent buffer  buffsize     % Buffer to store incoming data
+    persistent point        % Index of buffer, update new data to buffer
+    persistent firstTime    % Flag that labels whether the first round of buffer has been filled or not
+    persistent wind         % window to calculate power spectrum
+    persistent indx         % Index of power spectrum calculation
+
+    persistent sp f t       % for power spectrum calculation
+    persistent tStart tElapsed      % For timing
+    
+    % Initializing variables
     if isempty(lastvolt), lastvolt = nan; end  
-    if isempty(point), point = 1; end    
+    if isempty(point), point = 1; end 
+    if isempty(indx), indx = 2; end
+    if isempty(firstTime), firstTime = 0; end   % 0 means the first time has not been reached, no calculation takes place
+    
     %
     s = handles.serialPort;
     name = get(s, 'Name');
@@ -168,20 +195,25 @@ function timer_Callback(hObj, event, handles)
     h_plot2 = handles.h_plots.plot2;
     h_line = handles.h_plots.line;
     h_text = handles.h_text;
+    h_text3 = handles.h_text3;
     
     sec = handles.h_plots.sec;
     freqLim = handles.h_plots.freqLim;
     Fs = handles.Fs;
     
     %  **** Changable variable
-    timeCalcSpec = 1000; % milisec
+    timeCalcSpec = 1; % time duration after which the power spectrum takes place (second)
+    pointCalcSpec = ceil(timeCalcSpec*Fs); % number of points after which the ps is calculated
     %  ****
     
-    pointCalcSpec = ceil(timeCalcSpec/1000*Fs)
-    
-    if isempty(wind), wind = zeros(1, pointCalcSpec); end
+    % Buffer window
+    buffsize = 5*Fs;    % a*Fs, a is the number of seconds
+    if isempty(buffer), buffer = zeros(1, buffsize); end
+    if isempty(wind), wind = zeros(1, buffsize); end    % buffer and wind has same size but
+                                                        % different
+                                                        % functions
 
-    
+    % 
     if isempty(timeShift)
         timeShift = 0;
     end
@@ -208,62 +240,57 @@ function timer_Callback(hObj, event, handles)
                 set(h_axes1, 'xtick', [0:Fs:sec*Fs], 'xticklabel', [timeShift:(timeShift+sec)]);
             end
             
-            % --------------- Import data -----------------------
+            % --------------- Import data -----------------------    
             try
-                a = fscanf(s,'%s');
-            catch % should be a better (more specific) error-catching here
+                a = fscanf(s,'%s');     % read from Arduino
+                assignin('base', 'mya', a);  
+            catch
                 break;
             end
             
+            % Detect weird string stored in a, ignore such value
+            if isempty(str2num(a))
+                    continue;
+            end
+            
             try
-                if length(a) < 10
-                    a = strcat(num2str(zeros(1,10-length(a))), a);
-                end
-                voltage = bin2dec(a)/1023*5;
-%                 voltage = a;
-%                 twos2dec(a)
-%                 voltage = twos2dec(a)/511*5;
-                wind(point) = voltage;
-                point = point + 1;
+                voltage = str2num(a);
+                buffer(point) = voltage;
                 
                 %  -------- Calculate power spectrum -----------------
-                if point == pointCalcSpec % calculation is only performed when the time comes
-                    wind = wind - sign(mean(wind))*abs(mean(wind));
-                    [sp, f] = PowerSpect(wind, Fs);             % Calc power spectrum
+                if (rem(abs(point-indx),pointCalcSpec)==0)&&(firstTime == 1)    % calculation is only performed when the time comes
+                    wind = [buffer(indx:end) buffer(1:(indx-1))];
+                    wind = wind - sign(mean(wind))*abs(mean(wind));             % Remove DC component
+                    [sp, f] = PowerSpect(wind, Fs);                             % Calc power spectrum   
                     assignin('base', 'myf', f);
                     assignin('base', 'mysp', sp);
                     set(h_plot2, 'XData',  f(1:floor(freqLim/2-1)), 'YData', sp(1:floor(freqLim/2-1)));
-                    point = 1;
+                    indx = point;   % Update index
                     
                     % --------- Calculate and display Heart Rate ---------------
-                    heartRate = f(find(sp == max(sp)));
+                    heartRate = 60*f(find(sp == max(sp)));
                     set(h_text, 'String', num2str(heartRate), ...
                         'FontSize', 30, ...
                         'FontWeight', 'bold')                    
                 end
+
+                % Reset point pointer every time it finishes filling the buffer
+                if (point ~= buffsize) 
+                    point = point + 1;
+                else    % point reaches buffsize
+                    % SWITCH flag when the first round of buffer is filled
+                    if (firstTime ~= 1)
+                        set(h_text3, 'String', 'OK, importing data');
+                        firstTime = 1;
+                    end
+                point = 1; % reset
+                end
                 
             catch e
                 warning('warning: something is not working probably');
-                wind = wind - sign(mean(wind))*abs(mean(wind));
-                assignin('base', 'myf', f);
-                [sp, f] = PowerSpect(wind, Fs);
-                assignin('base', 'mysp', sp);
-                set(h_plot2, 'XData', f(1:floor(freqLim/2-1)), 'YData', sp(1:floor(freqLim/2-1)));
-%                 set(h_plot2, 'XData', f, 'YData', sp(:,1));
-
-                point = 1;
-                    
-                % --------- Calculate and display Heart Rate ---------------
-                heartRate = f(find(sp == max(sp)));
-                
-                set(h_text, 'String', num2str(heartRate), ...
-                    'FontSize', 30, ...
-                    'FontWeight', 'bold') 
-                
-                
+                pause(1.5);
                 continue;
             end
-%             disp(s.BytesAvailable) 
                
             
             % --------------- Update plot -----------------------
@@ -281,41 +308,21 @@ function timer_Callback(hObj, event, handles)
             
             
             % --------- Write data to file -----------------
-            
-            
-            % Sencond approach
-%             volt = voltage;
-%             plot([count-1 count], [lastvolt volt], 'g.-');
             count = count + 1;
-%             lastvolt = voltage;
             
+%             tElapsed = toc(tStart)*1000
+%             disp(['Bytes Available: ' num2str(s.BytesAvailable)]);
+%             disp(['Bytes To Output: ' num2str(s.BytesToOutput)]);
+%             assignin('base', 'BytesToOutput', s.BytesToOutput);
             
+                
             drawnow;    % update events (stop button)
-            tElapsed = toc(tStart)*1000
         end   % while       
     end % if
-end
-
-function startButton_Callback(hObj, event, handles)
-    t = handles.t;
-    if strcmp(get(t, 'Running'), 'on')
-       disp('Timer is already running.');
-    else
-        start(t);
-    end
-    
 end % stopButton function
 
 function stopButton_Callback(hObj, event, handles)
-    s = handles.serialPort;
-    t = handles.t;
-    % Stop timer
-    if strcmp(get(t, 'Running'), 'on')
-        disp('Timer is running. Stop now');
-        stop(t);
-    else
-        disp('Timer has been stopped');
-    end
+     s = handles.serialPort;
     
     % Close port
     if strcmp(get(s, 'Status'), 'closed')
@@ -329,14 +336,12 @@ end
 
 function deleteFigure_Callback(hObj, event, handles)
     s = handles.serialPort;
-    t = handles.t;
     
     if strcmp(get(s, 'Status'), 'open')
         disp('Port is still open. Now closing the port');
         fclose(s);
     end
     delete(s)
-    delete(t)
 end
 
 
