@@ -13,12 +13,13 @@ else
     disp('Found the desired bluetooth module')
 end
 
+
 % Open port
 try
     fopen(b);
+    disp('Port is opened');
 catch
     disp('Something wrong. Can''t open the bluetooth serial port')
-    delete(b);
 end
 
 % Create handles
@@ -43,16 +44,21 @@ set(readButton, 'Callback', {@readButton_Callback, handles});
 end
 
 function readButton_Callback(hObj, event, handles)
+% for i=1:10
+%     b = handles.serialPort;
+%     a = fgets(b);
+%     a = str2double(a(1:4));
+%     disp(a);
+%     assignin('base', 'mya', a);
+% end
     b = handles.serialPort;
     a = fgets(b);
     disp(a);
     assignin('base', 'mya', a);
-    
 end
 
 function deleteFigure_Callback(hObj, event, handles)
     b = handles.serialPort;
-    
     if strcmp(get(b, 'Status'), 'open')
         disp('Port is still open. Now closing the port');
         fclose(b);
