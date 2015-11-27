@@ -55,11 +55,11 @@ set(h_axes1, 'xtick', [0:Fs:timepoints], 'xticklabel', [0:sec]);
 % Initial plot
 hold on;
 h_plot1 = plot(1:timepoints, zeros(1,timepoints));
-h_line = line([0 0], [-5 10], 'Color', [1 0.5 0.5], 'LineWidth', 2);
+h_line = line([0 0], [0 7], 'Color', [1 0.5 0.5], 'LineWidth', 2);
 
 
 % Vertical limit
-ylim(h_axes1, [-5 5]);
+ylim(h_axes1, [0 7]);
 
 % Create xlabel
 xlabel('Time','FontWeight','bold','FontSize',14);
@@ -83,7 +83,7 @@ hold on;
 h_plot2 = plot(1:floor(freqLim/2-1), zeros(1, floor(freqLim/2-1)));
 
 % Vertical lim
-ylim(h_axes1, [0 100]);
+ylim(h_axes1, [0 7]);
 
 % Create xlabel
 xlabel('Frequency','FontWeight','bold','FontSize',14);
@@ -254,16 +254,18 @@ function startButton_Callback(hObj, event, handles)
             end
             
             try
-                voltage = str2num(a);
+                voltage = str2num(a)/1023*5;
                 buffer(point) = voltage;
                 
                 %  -------- Calculate power spectrum -----------------
                 if (rem(abs(point-indx),pointCalcSpec)==0)&&(firstTime == 1)    % calculation is only performed when the time comes
                     wind = [buffer(indx:end) buffer(1:(indx-1))];
+                    assignin('base', 'mywind', wind);
                     wind = wind - sign(mean(wind))*abs(mean(wind));             % Remove DC component
+%                     assignin('base', mywind, wind);
                     [sp, f] = PowerSpect(wind, Fs);                             % Calc power spectrum   
-                    assignin('base', 'myf', f);
-                    assignin('base', 'mysp', sp);
+                    
+%                     assignin('base', 'mysp', sp);
                     set(h_plot2, 'XData',  f(1:floor(freqLim/2-1)), 'YData', sp(1:floor(freqLim/2-1)));
                     indx = point;   % Update index
                     
@@ -303,7 +305,7 @@ function startButton_Callback(hObj, event, handles)
             % Update Y axes
             if count > 50
                 window = volt(count-50:count);
-                set(h_axes1, 'Ylim', [(min(window)-0.5) (max(window)+0.5)]);
+%                 set(h_axes1, 'Ylim', [(min(window)-0.5) (max(window)+0.5)]);
             end
             
             

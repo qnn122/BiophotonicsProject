@@ -1,18 +1,28 @@
-function test_SerialVal()
+function test_Bluetooth()
 % Purpose:
-%   Test value received from serial port (which delivered by Arduino)
+%   Test value received from bluetooth (which delivered by Arduino)
 
 %% Create input dialog, enter port name and sampling frequency
-prompt = {'Enter port name: '};
-def = {'COM9'};
-answer = inputdlg(prompt, 'Input', 1, def);
+disp('Connecting ...')
+b = Bluetooth('Chau_HC-05',1);
+disp('Done.')
+if isempty(b)
+    disp('Cannot find the bluetooth module. The program terminated!')
+    return;
+else
+    disp('Found the desired bluetooth module')
+end
 
 % Open port
-s = serial(answer{1}, 'Baudrate', 9600);
-fopen(s);
+try
+    fopen(b);
+catch
+    disp('Something wrong. Can''t open the bluetooth serial port')
+    delete(b);
+end
 
 % Create handles
-handles.serialPort = s;
+handles.serialPort = b;
 
 % Figure
 h_fig = figure('name', 'SimpleGui', ....
@@ -33,18 +43,19 @@ set(readButton, 'Callback', {@readButton_Callback, handles});
 end
 
 function readButton_Callback(hObj, event, handles)
-    s = handles.serialPort;
-    a = fscanf(s, '%s')
+    b = handles.serialPort;
+    a = fgets(b);
+    disp(a);
     assignin('base', 'mya', a);
     
 end
 
 function deleteFigure_Callback(hObj, event, handles)
-    s = handles.serialPort;
+    b = handles.serialPort;
     
-    if strcmp(get(s, 'Status'), 'open')
+    if strcmp(get(b, 'Status'), 'open')
         disp('Port is still open. Now closing the port');
-        fclose(s);
+        fclose(b);
     end
-    delete(s)
+    delete(b)
 end
