@@ -55,11 +55,11 @@ set(h_axes1, 'xtick', [0:Fs:timepoints], 'xticklabel', [0:sec]);
 % Initial plot
 hold on;
 h_plot1 = plot(1:timepoints, zeros(1,timepoints));
-h_line = line([0 0], [0 7], 'Color', [1 0.5 0.5], 'LineWidth', 2);
+h_line = line([0 0], [0 6], 'Color', [1 0.5 0.5], 'LineWidth', 2);
 
 
 % Vertical limit
-ylim(h_axes1, [0 7]);
+ylim(h_axes1, [0 6]);
 
 % Create xlabel
 xlabel('Time','FontWeight','bold','FontSize',14);
@@ -305,7 +305,7 @@ function startButton_Callback(hObj, event, handles)
             % Update Y axes
             if count > 50
                 window = volt(count-50:count);
-%                 set(h_axes1, 'Ylim', [(min(window)-0.5) (max(window)+0.5)]);
+                set(h_axes1, 'Ylim', [(min(window)-0.5) (max(window)+0.5)]);
             end
             
             
