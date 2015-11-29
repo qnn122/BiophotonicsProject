@@ -32,6 +32,13 @@ import android.widget.Toast;
 
 public class bluetooth extends AppCompatActivity implements OnItemClickListener{
 
+    public static void disconnect() {
+        if (connectedThread != null) {
+            connectedThread.cancel();
+            connectedThread = null;
+        }
+    }
+
     public static void gethandler(Handler handler) {
         mHandler = handler;
     }
