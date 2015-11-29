@@ -143,11 +143,25 @@ public class bluetooth extends AppCompatActivity implements OnItemClickListener{
         unregisterReceiver(receiver);
     }
 
-    
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_CANCELED){
+            Toast.makeText(getApplicationContext(), "Bluetooth must be enabled to continue", Toast.LENGTH_LONG).show();
+        }
+    }
 
     @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
+    public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
+        if (btAdapter.isDiscovering()){
+            btAdapter.cancelDiscovery();
+        }
+        if (listAdapter.getItem(arg2).contains("(Paired)")) {
+            BluetoothDevice selectedDevice = devices.get(arg2);
+            ConnectThread connect  = new ConnectThread(selectedDevice);
+            connect.start();
+        } else {
+            Toast.makeText(getApplicationContext(), "device is not paired", Toast.LENGTH_LONG).show();
+        }
     }
 
     private class ConnectThread extends Thread {
