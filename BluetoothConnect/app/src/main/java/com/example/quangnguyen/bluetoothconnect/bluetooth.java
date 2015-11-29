@@ -138,8 +138,16 @@ public class bluetooth extends AppCompatActivity implements OnItemClickListener{
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(receiver);
+    }
+
+    
+
+    @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        
+
     }
 
     private class ConnectThread extends Thread {
