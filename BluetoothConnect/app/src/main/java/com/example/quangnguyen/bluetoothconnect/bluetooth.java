@@ -30,7 +30,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
-public class bluetooth extends AppCompatActivity implements OnItemClickListener{
+public class Bluetooth extends AppCompatActivity implements OnItemClickListener{
 
     public static void disconnect() {
         if (connectedThread != null) {

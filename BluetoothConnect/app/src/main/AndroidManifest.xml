@@ -22,9 +22,13 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".bluetooth"
-            android:label="@string/title_activity_bluetooth"
+            android:name=".Bluetooth"
+            android:label="Bluetooth"
             android:theme="@style/AppTheme.NoActionBar" >
+            <intent-filter>
+                <action android:name="android.intent.action.BT1" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
     </application>
 
