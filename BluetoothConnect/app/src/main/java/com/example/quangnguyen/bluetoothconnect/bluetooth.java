@@ -19,15 +19,17 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.IntentFilter;
+import android.content.Intent;
+import android.os.Handler;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.os.Handler;
 import android.widget.Toast;
-import android.content.Intent;
 
-public class bluetooth extends AppCompatActivity {
+public abstract class bluetooth extends AppCompatActivity implements OnItemClickListener{
 
     public static void gethandler(Handler handler) {
         mHandler = handler;
@@ -45,7 +47,7 @@ public class bluetooth extends AppCompatActivity {
     static BluetoothAdapter btAdapter;
     Set<BluetoothDevice> devicesArray;
     ArrayList<String> pairedDevices;
-    ArrayList<BluetoothDevice> deives;
+    ArrayList<BluetoothDevice> devices;
     IntentFilter filter;
     BroadcastReceiver receiver;
 
@@ -54,7 +56,7 @@ public class bluetooth extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bluetooth);
-       /* Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        /*Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -98,7 +100,14 @@ public class bluetooth extends AppCompatActivity {
     }
 
     private void init(){
-
+        listView = (ListView)findViewById(R.id.listView);
+        listView.setOnItemClickListener(this);
+        listAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, 0);
+        listView.setAdapter(listAdapter);
+        btAdapter = BluetoothAdapter.getDefaultAdapter();
+        pairedDevices = new ArrayList<String>();
+        filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        devices = new ArrayList<BluetoothDevice>();
     }
 
     private class ConnectThread extends Thread {
