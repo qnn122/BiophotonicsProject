@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
 
+import android.content.Context;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -108,6 +109,32 @@ public abstract class bluetooth extends AppCompatActivity implements OnItemClick
         pairedDevices = new ArrayList<String>();
         filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         devices = new ArrayList<BluetoothDevice>();
+        receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                    devices.add(device);
+                    String s = "";
+                    for (int a = 0; a < pairedDevices.size(); a++){
+                        if (device.getName().equals(pairedDevices.get(a))){
+                            s = "(Paired)";
+                            break;
+                        }
+                    }
+                    listAdapter.add(device.getName()+ " " + s + " " + "\n" + device.getAddress());
+                } else if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
+
+                } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+
+                } else if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(action)) {
+                    if (btAdapter.getState() == btAdapter.STATE_OFF) {
+                        turnOnBT();
+                    }
+                }
+            }
+        };
     }
 
     private class ConnectThread extends Thread {
