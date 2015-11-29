@@ -30,7 +30,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
-public abstract class bluetooth extends AppCompatActivity implements OnItemClickListener{
+public class bluetooth extends AppCompatActivity implements OnItemClickListener{
 
     public static void gethandler(Handler handler) {
         mHandler = handler;
@@ -135,6 +135,11 @@ public abstract class bluetooth extends AppCompatActivity implements OnItemClick
                 }
             }
         };
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        
     }
 
     private class ConnectThread extends Thread {
