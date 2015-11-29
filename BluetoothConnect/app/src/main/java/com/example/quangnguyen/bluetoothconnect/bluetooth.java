@@ -24,7 +24,8 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.os.Handler;
-
+import android.widget.Toast;
+import android.content.Intent;
 
 public class bluetooth extends AppCompatActivity {
 
@@ -42,7 +43,7 @@ public class bluetooth extends AppCompatActivity {
     ListView listView;
     ArrayAdapter<String> listAdapter;
     static BluetoothAdapter btAdapter;
-    Set<BluetoothDevice> devices;
+    Set<BluetoothDevice> devicesArray;
     ArrayList<String> pairedDevices;
     ArrayList<BluetoothDevice> deives;
     IntentFilter filter;
@@ -65,6 +66,35 @@ public class bluetooth extends AppCompatActivity {
             }
         });*/
         init();
+        if (btAdapter == null){
+            Toast.makeText(getApplicationContext(), "No BT detected", Toast.LENGTH_LONG).show();
+            finish();
+        } else {
+            if (!btAdapter.isEnabled()){
+                turnOnBT();
+            }
+            getPairedDevices();
+            startDiscovery();
+        }
+    }
+
+    private void getPairedDevices() {
+        btAdapter.cancelDiscovery();
+        btAdapter.startDiscovery();
+    }
+
+    private void turnOnBT(){
+        Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+        startActivityForResult(intent, 1);
+    }
+
+    private void startDiscovery() {
+        devicesArray = btAdapter.getBondedDevices();
+        if (devicesArray.size() > 0 ){
+            for (BluetoothDevice device:devicesArray) {
+                pairedDevices.add(device.getName());
+            }
+        }
     }
 
     private void init(){
