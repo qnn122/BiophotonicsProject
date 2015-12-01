@@ -8,8 +8,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -37,7 +35,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             switch(msg.what) {
                 case Bluetooth.SUCCESS_CONNECT:
                     Bluetooth.connectedThread = new Bluetooth.ConnectedThread((BluetoothSocket)msg.obj);
-                    Toast.makeText(getApplicationContext(), "Connected!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Connected!", Toast.LENGTH_LONG).show();
                     String s = "Successfully connected";
                     Bluetooth.connectedThread.start();
                     break;
@@ -87,10 +85,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);                    // request Lanscape
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        //
+        requestWindowFeature(Window.FEATURE_NO_TITLE); //hide title
         this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN); // hide title and status bar
+        //
+        super.onCreate(savedInstanceState);
+
+        this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);                    // request Landscape
         setContentView(R.layout.activity_main);
 
         LinearLayout background = (LinearLayout) findViewById(R.id.bg);     // Change background color to BLACK
@@ -186,7 +187,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    @Override
+   /* @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
@@ -206,5 +207,5 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
         return super.onOptionsItemSelected(item);
-    }
+    }*/
 }

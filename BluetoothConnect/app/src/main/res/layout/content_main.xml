@@ -36,8 +36,8 @@
         <Button
             android:id="@+id/bConnect"
             android:layout_width="fill_parent"
-            android:layout_height="30dp"
-            android:text="Button"
+            android:layout_height="wrap_content"
+            android:text="Connect"
             android:textSize="10dp"
             android:textColor="@color/white"/>
 
@@ -45,8 +45,8 @@
             android:id="@+id/bDisconnect"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Button"
-            android:textSize="15dp"
+            android:text="Disconnect"
+            android:textSize="10dp"
             android:textColor="@color/white"/>
 
         <TextView
@@ -63,7 +63,8 @@
             android:layout_height="50dp"
             android:checked="true"
             android:textOff="Start Stream"
-            android:textOn ="Stop Stream"
+            android:textOn ="Start Stream"
+            android:textSize="12dp"
             android:textColor="@color/white"/>
 
         <ToggleButton
@@ -73,6 +74,7 @@
             android:checked="true"
             android:textOff="Auto Scroll X"
             android:textOn ="Auto Scroll X"
+            android:textSize="12dp"
             android:textColor="@color/white"/>
 
         <ToggleButton
@@ -82,6 +84,7 @@
             android:checked="true"
             android:textOff="Lock Xaxis"
             android:textOn ="Lock Xaxis"
+            android:textSize="12dp"
             android:textColor="@color/white"/>
 
         <LinearLayout

@@ -165,9 +165,11 @@ public class Bluetooth extends AppCompatActivity implements OnItemClickListener{
             btAdapter.cancelDiscovery();
         }
         if (listAdapter.getItem(arg2).contains("(Paired)")) {
+            //Toast.makeText(getApplicationContext(), "Reach 1", Toast.LENGTH_LONG).show();
             BluetoothDevice selectedDevice = devices.get(arg2);
             ConnectThread connect  = new ConnectThread(selectedDevice);
             connect.start();
+            //Toast.makeText(getApplicationContext(), "Reach 2", Toast.LENGTH_LONG).show();
         } else {
             Toast.makeText(getApplicationContext(), "device is not paired", Toast.LENGTH_LONG).show();
         }
