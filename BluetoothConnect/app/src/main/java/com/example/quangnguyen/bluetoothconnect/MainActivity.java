@@ -42,7 +42,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     if (strIncom.indexOf('s') == 0 && strIncom.indexOf(',') == 2) {
                         strIncom = strIncom.replace("s", "");
                         if (isFloatNumber(strIncom)) {
-                            
+                            Series.appendData(new GraphView.GraphViewData(graph2LastXvalue, Double.parseDouble(strIncom)), AutoScroll);
+
+                            if (graph2LastXvalue >= Xview && Lock==true) {
+                                Series.resetData(new GraphView.GraphViewData[] {});
+                                graph2LastXvalue = 0;
+                            } else graph2LastXvalue += 0.1;
                         }
                     }
             }
