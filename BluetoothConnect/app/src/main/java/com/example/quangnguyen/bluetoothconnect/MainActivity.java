@@ -13,6 +13,7 @@ import android.view.MenuItem;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
+import android.widget.Button;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -26,7 +27,16 @@ public class MainActivity extends AppCompatActivity {
 
         LinearLayout background = (LinearLayout) findViewById(R.id.bg);     // Change background color to BLACK
         background.setBackgroundColor(Color.BLACK);
+        init();
+        Buttoninit();
 
+    }
+
+    void init() {
+
+    }
+
+    void Buttoninit() {
 
     }
 
