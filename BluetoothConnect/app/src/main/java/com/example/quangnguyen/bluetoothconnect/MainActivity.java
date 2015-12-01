@@ -115,7 +115,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         graphView.setManualYAxis(true);
         graphView.setManualYAxisBounds(5, 0);
         graphView.addSeries(Series);
-        graphView.addView(graphView);
+        GraphView.addView(graphView);
     }
 
     void Buttoninit() {
@@ -157,10 +157,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Bluetooth.disconnect();
                 break;
             case R.id.bXminus:
-
+                if (Xview > 1) Xview--;
                 break;
             case R.id.bXplus:
-
+                if (Xview < 30) Xview++;
                 break;
             case R.id.tbLock:
                 if (tbLock.isChecked()){
