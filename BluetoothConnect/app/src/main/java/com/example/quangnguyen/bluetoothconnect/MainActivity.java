@@ -16,8 +16,13 @@ import android.view.WindowManager;
 
 import android.widget.LinearLayout;
 import android.widget.Button;
+import android.widget.ToggleButton;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+
+    Button bConnect, bDisconnect, bXminus, bXplus;
+    ToggleButton tbLock, tbScroll, tbStream;
+    static boolean Lock, AutoScroll, Stream;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,7 +44,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     void Buttoninit() {
+        /*Buttons*/
+        bConnect = (Button) findViewById(R.id.bConnect);
+        bConnect.setOnClickListener(this);
 
+        bDisconnect = (Button) findViewById(R.id.bDisconnect);
+        bDisconnect.setOnClickListener(this);
+
+        bXminus = (Button) findViewById(R.id.bXminus);
+        bXminus.setOnClickListener(this);
+
+        bXplus = (Button) findViewById(R.id.bXplus);
+        bXplus.setOnClickListener(this);
+
+        /*Toggle Buttons*/
+        tbLock = (ToggleButton) findViewById(R.id.tbLock);
+        tbLock.setOnClickListener(this);
+
+        tbScroll = (ToggleButton) findViewById(R.id.tbScroll);
+        tbScroll.setOnClickListener(this);
+
+        tbStream = (ToggleButton) findViewById(R.id.tbStream);
+        tbStream.setOnClickListener(this);
+
+        Lock = true;
+        AutoScroll = true;
+        Stream = false;
     }
 
     @Override
