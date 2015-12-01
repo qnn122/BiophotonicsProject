@@ -35,6 +35,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     String s = "Successfully connected";
                     Bluetooth.connectedThread.start();
                     break;
+                case Bluetooth.MESSAGE_READ:
+                    byte[] readBuf = (byte[]) msg.obj;
+                    String strIncom = new String(readBuf, 0, 5);
+
+                   
+                    }
             }
         }
     };
