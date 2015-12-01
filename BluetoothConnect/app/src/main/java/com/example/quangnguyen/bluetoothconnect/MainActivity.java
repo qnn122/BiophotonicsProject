@@ -41,9 +41,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                     if (strIncom.indexOf('s') == 0 && strIncom.indexOf(',') == 2) {
                         strIncom = strIncom.replace("s", "");
-
+                        if (isFloatNumber(strIncom)) {
+                            
+                        }
                     }
             }
+        }
+
+        public boolean isFloatNumber(String num) {
+            try {
+                Double.parseDouble(num);
+            }catch(NumberFormatException nfe) {
+                return false;
+            }
+            return true;
         }
     };
 
