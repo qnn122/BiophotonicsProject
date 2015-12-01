@@ -217,7 +217,7 @@ public class Bluetooth extends AppCompatActivity implements OnItemClickListener{
         }
     }
 
-    private class ConnectedThread extends Thread {
+    static class ConnectedThread extends Thread {
         private final BluetoothSocket mmSocket;
         private final InputStream mmInStream;
         private final OutputStream mmOutStream;

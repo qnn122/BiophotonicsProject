@@ -18,6 +18,8 @@ import android.widget.LinearLayout;
 import android.widget.Button;
 import android.widget.ToggleButton;
 
+import android.content.Intent;
+
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     Button bConnect, bDisconnect, bXminus, bXplus;
@@ -74,7 +76,41 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View v) {
+        switch(v.getId()) {
+            case R.id.bConnect:
+                startActivity(new Intent("android.intent.action.BT1")); //from manifest file
+                break;
+            case R.id.bDisconnect:
+                Bluetooth.disconnect();
+                break;
+            case R.id.bXminus:
 
+                break;
+            case R.id.bXplus:
+
+                break;
+            case R.id.tbLock:
+                if (tbLock.isChecked()){
+                    Lock = true;
+                }else {
+                    Lock = false;
+                }
+                break;
+            case R.id.tbScroll:
+                if (tbScroll.isChecked()){
+                     AutoScroll= true;
+                }else {
+                    AutoScroll = false;
+                }
+                break;
+            case R.id.tbStream:
+                if (tbStream.isChecked()){
+                    if (Bluetooth.connectedThread != null) Bluetooth.connectedThread.write("E");
+                }else {
+                    if (Bluetooth.connectedThread != null) Bluetooth.connectedThread.write("Q");
+                }
+                break;
+        }
     }
 
     @Override
