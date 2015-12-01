@@ -39,7 +39,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     byte[] readBuf = (byte[]) msg.obj;
                     String strIncom = new String(readBuf, 0, 5);
 
-                   
+                    if (strIncom.indexOf('s') == 0 && strIncom.indexOf(',') == 2) {
+                        strIncom = strIncom.replace("s", "");
+
                     }
             }
         }
