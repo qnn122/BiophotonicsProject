@@ -48,6 +48,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 Series.resetData(new GraphView.GraphViewData[] {});
                                 graph2LastXvalue = 0;
                             } else graph2LastXvalue += 0.1;
+
+                            if (Lock == true) graphView.setViewPort(graph2LastXvalue-Xview, Xview);
+
+                            //refresh
+                            GraphView.removeView(graphView);
+                            GraphView.addView(graphView);
                         }
                     }
             }
