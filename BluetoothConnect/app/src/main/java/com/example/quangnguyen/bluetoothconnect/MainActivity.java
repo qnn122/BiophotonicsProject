@@ -24,6 +24,12 @@ import com.jjoe64.graphview.LineGraphView;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
+    @Override
+    public void onBackPressed() {
+        if (Bluetooth.connectedThread != null) Bluetooth.connectedThread.write("Q");
+        super.onBackPressed();
+    }
+
     Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
