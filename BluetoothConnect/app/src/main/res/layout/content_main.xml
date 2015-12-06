@@ -61,7 +61,7 @@
             android:id="@+id/tbStream"
             android:layout_width="fill_parent"
             android:layout_height="50dp"
-            android:checked="true"
+            android:checked="false"
             android:textOff="Start Stream"
             android:textOn ="Start Stream"
             android:textSize="12dp"
