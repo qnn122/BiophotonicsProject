@@ -10,6 +10,7 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -32,6 +33,8 @@ public class Bluetooth extends AppCompatActivity implements OnItemClickListener{
             connectedThread = null;
         }
     }
+    // Debugging
+    private static final String TAG = "BluetoothReadService";
 
     public static void gethandler(Handler handler) {
         mHandler = handler;
@@ -40,7 +43,9 @@ public class Bluetooth extends AppCompatActivity implements OnItemClickListener{
     static Handler mHandler = new Handler();
 
     static ConnectedThread connectedThread;
-    public static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+
+    //public static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    public static final UUID MY_UUID = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
 
     protected static final int SUCCESS_CONNECT = 0;
     protected static final int MESSAGE_READ = 1;
@@ -176,7 +181,7 @@ public class Bluetooth extends AppCompatActivity implements OnItemClickListener{
     }
 
     private class ConnectThread extends Thread {
-        private final BluetoothSocket mmSocket;
+        private BluetoothSocket mmSocket;
         private final BluetoothDevice mmDevice;
 
         public ConnectThread(BluetoothDevice device) {
@@ -197,16 +202,30 @@ public class Bluetooth extends AppCompatActivity implements OnItemClickListener{
             // Cancel discovery because it will slow down the connection
             btAdapter.cancelDiscovery();
 
+            // Make a connection to the BluetoothSocket
             try {
-                // Connect the device through the socket. This will block
-                // until it succeeds or throws an exception
+                // This is a blocking call and will only return on a successful connection or an exception
+                Log.i(TAG,"Connecting to socket...");
                 mmSocket.connect();
-            } catch (IOException connectException) {
-                // Unable to connect; close the socket and get out
+            } catch (IOException e) {
+                Log.e(TAG, e.toString());
+                //  e.printStackTrace();
+
                 try {
-                    mmSocket.close();
-                } catch (IOException closeException) { }
-                return;
+                    Log.i(TAG,"Trying fallback...");
+                    mmSocket =(BluetoothSocket) mmDevice.getClass().getMethod("createRfcommSocket", new Class[] {int.class}).invoke(mmDevice,1);
+                    mmSocket.connect();
+                    Log.i(TAG, "Connected");
+                } catch (Exception e2) {
+                    Log.e(TAG, "Couldn't establish Bluetooth connection!");
+                    try {
+                        mmSocket.close();
+                    } catch (IOException e3) {
+                        Log.e(TAG, "unable to close() (mSocketType here) socket during connection failure", e3);
+                    }
+                    return;
+                }
+                // return;
             }
 
             // Do work to manage the connection (in a separate thread)
