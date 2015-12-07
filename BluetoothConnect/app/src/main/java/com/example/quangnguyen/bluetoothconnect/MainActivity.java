@@ -23,21 +23,38 @@ import com.jjoe64.graphview.LineGraphView;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    // DEBUGGING
-    public static final boolean DEBUG = true;
-    public static final String LOG_TAG = "MainActivity";
+
     @Override
     public void onBackPressed() {
         if (Bluetooth.connectedThread != null) Bluetooth.connectedThread.write("Q");
         super.onBackPressed();
     }
 
+    // DEBUGGING
+    public static final boolean DEBUG = true;
+    public static final String LOG_TAG = "MainActivity";
+
+    // Button
+    Button bConnect, bDisconnect, bXminus, bXplus;
+
+    // Toggle Button
+    ToggleButton tbLock, tbScroll, tbStream;
+    static boolean Lock, AutoScrollX, Stream;
+
+    // Graph init()
+    static LinearLayout GraphView;
+    static GraphView graphView;
+    static GraphViewSeries Series;
+
+    // Graph value
+    private static double graph2LastXvalue = 0;
+    private static int Xview = 10;
+
     Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
             String s1 = Integer.toString(msg.what);
-            if (DEBUG) { Log.i(LOG_TAG, "Received MESSSAGE HERE, code:" + s1);}
             switch(msg.what) {
                 case Bluetooth.SUCCESS_CONNECT:
                     if (DEBUG) { Log.i(LOG_TAG, "Received SUCCESS MESSSAGE HERE, code:" + s1);}
@@ -50,25 +67,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     break;
                 case Bluetooth.MESSAGE_READ:
                     byte[] readBuf = (byte[]) msg.obj;
-                    String strIncom = new String(readBuf, 0, 5);
+                    String strIncom = new String(readBuf, 0, 5);    // create string from bytes array
 
-                    if (strIncom.indexOf('s') == 0 && strIncom.indexOf(',') == 2) {
+                    Log.d("strIncom", strIncom);
+                    if (strIncom.indexOf('.') == 2 && strIncom.indexOf('s') == 0) {
                         strIncom = strIncom.replace("s", "");
-                        if (isFloatNumber(strIncom)) {
-                            Series.appendData(new GraphView.GraphViewData(graph2LastXvalue, Double.parseDouble(strIncom)), AutoScroll);
 
+                        if (isFloatNumber(strIncom)) {
+                            Series.appendData(new GraphView.GraphViewData(graph2LastXvalue, Double.parseDouble(strIncom)), AutoScrollX);
+
+                            // X-axis control
                             if (graph2LastXvalue >= Xview && Lock==true) {
                                 Series.resetData(new GraphView.GraphViewData[] {});
                                 graph2LastXvalue = 0;
                             } else graph2LastXvalue += 0.1;
 
-                            if (Lock == true) graphView.setViewPort(graph2LastXvalue-Xview, Xview);
+                            if (Lock == true)
+                                graphView.setViewPort(0, Xview);
+                            else
+                                graphView.setViewPort(graph2LastXvalue - Xview, Xview);
 
                             //refresh
                             GraphView.removeView(graphView);
                             GraphView.addView(graphView);
                         }
                     }
+                    break;
             }
         }
 
@@ -82,15 +106,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     };
 
-    Button bConnect, bDisconnect, bXminus, bXplus;
-    ToggleButton tbLock, tbScroll, tbStream;
-    static boolean Lock, AutoScroll, Stream;
-    // Graph init()
-    static LinearLayout GraphView;
-    static GraphView graphView;
-    static GraphViewSeries Series;
-    private static double graph2LastXvalue = 0;
-    private static int Xview = 10;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -160,7 +176,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         tbStream.setOnClickListener(this);
 
         Lock = true;
-        AutoScroll = true;
+        AutoScrollX = true;
         Stream = false;
     }
 
@@ -188,9 +204,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.tbScroll:
                 if (tbScroll.isChecked()){
-                     AutoScroll= true;
+                     AutoScrollX= true;
                 }else {
-                    AutoScroll = false;
+                    AutoScrollX = false;
                 }
                 break;
             case R.id.tbStream:
