@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -22,6 +23,9 @@ import com.jjoe64.graphview.LineGraphView;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
+    // DEBUGGING
+    public static final boolean DEBUG = true;
+    public static final String LOG_TAG = "MainActivity";
     @Override
     public void onBackPressed() {
         if (Bluetooth.connectedThread != null) Bluetooth.connectedThread.write("Q");
@@ -32,10 +36,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
+            String s1 = Integer.toString(msg.what);
+            if (DEBUG) { Log.i(LOG_TAG, "Received MESSSAGE HERE, code:" + s1);}
             switch(msg.what) {
                 case Bluetooth.SUCCESS_CONNECT:
+                    if (DEBUG) { Log.i(LOG_TAG, "Received SUCCESS MESSSAGE HERE, code:" + s1);}
+
                     Bluetooth.connectedThread = new Bluetooth.ConnectedThread((BluetoothSocket)msg.obj);
                     Toast.makeText(getApplicationContext(), "Connected!", Toast.LENGTH_LONG).show();
+
                     String s = "Successfully connected";
                     Bluetooth.connectedThread.start();
                     break;
@@ -102,11 +111,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     void init() {
+        Bluetooth.gethandler(mHandler);
+
+        // Initializing Graphview
         GraphView = (LinearLayout) findViewById(R.id.Graph);
+
+        // Init example series data -----
         Series = new GraphViewSeries("Signal",
-                    new GraphViewSeries.GraphViewStyle(Color.YELLOW,2),
+                    new GraphViewSeries.GraphViewStyle(Color.YELLOW,2), // Color and thickness of the line
                     new GraphView.GraphViewData[] {new GraphView.GraphViewData(0,0)});
-        graphView = new LineGraphView(this, "Graph");
+        graphView = new LineGraphView(
+                this            // context
+                , "Graph");     // heading
 
         graphView.setViewPort(0, Xview);
         graphView.setScrollable(true);
@@ -115,7 +131,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         graphView.setLegendAlign(com.jjoe64.graphview.GraphView.LegendAlign.BOTTOM);
         graphView.setManualYAxis(true);
         graphView.setManualYAxisBounds(5, 0);
-        graphView.addSeries(Series);
+        graphView.addSeries(Series);    // data
         GraphView.addView(graphView);
     }
 

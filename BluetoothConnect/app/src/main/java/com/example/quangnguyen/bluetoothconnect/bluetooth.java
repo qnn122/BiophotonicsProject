@@ -170,11 +170,9 @@ public class Bluetooth extends AppCompatActivity implements OnItemClickListener{
             btAdapter.cancelDiscovery();
         }
         if (listAdapter.getItem(arg2).contains("(Paired)")) {
-            //Toast.makeText(getApplicationContext(), "Reach 1", Toast.LENGTH_LONG).show();
             BluetoothDevice selectedDevice = devices.get(arg2);
             ConnectThread connect  = new ConnectThread(selectedDevice);
             connect.start();
-            //Toast.makeText(getApplicationContext(), "Reach 2", Toast.LENGTH_LONG).show();
         } else {
             Toast.makeText(getApplicationContext(), "device is not paired", Toast.LENGTH_LONG).show();
         }
@@ -216,6 +214,10 @@ public class Bluetooth extends AppCompatActivity implements OnItemClickListener{
                     mmSocket =(BluetoothSocket) mmDevice.getClass().getMethod("createRfcommSocket", new Class[] {int.class}).invoke(mmDevice,1);
                     mmSocket.connect();
                     Log.i(TAG, "Connected");
+
+                    // Do work to manage the connection (in a separate thread)
+                    mHandler.obtainMessage(SUCCESS_CONNECT, mmSocket).sendToTarget();
+                    Log.i(TAG, "REACH Bluetooth after SUCCESS_CONNECT");
                 } catch (Exception e2) {
                     Log.e(TAG, "Couldn't establish Bluetooth connection!");
                     try {
@@ -228,8 +230,7 @@ public class Bluetooth extends AppCompatActivity implements OnItemClickListener{
                 // return;
             }
 
-            // Do work to manage the connection (in a separate thread)
-            mHandler.obtainMessage(SUCCESS_CONNECT, mmSocket).sendToTarget();
+
         }
 
         /** Will cancel an in-progress connection, and close the socket */
