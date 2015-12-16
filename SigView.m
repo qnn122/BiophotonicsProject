@@ -12,8 +12,8 @@ clear all
 close all
 
 %% Create input dialog, enter port name and sampling frequency
-prompt = {'Enter port name: ', 'Enter sampling frequency: '};
-def = {'COM8', '100'};
+prompt = {'Enter port name: ', 'Enter sampling frequency: ', 'Communication type (Serial or Bluetooth): '};
+def = {'Chau_HC-05', '100', 'Bluetooth'};
 answer = inputdlg(prompt, 'Input', 1, def);
 
 if isempty(answer)
@@ -23,7 +23,17 @@ end
 
 %% Create Serial Port
 PortName = answer{1};
-s = serial(PortName);
+if strcmp(answer{3}, 'Serial')
+    disp('Connecting to serial port...');
+    s = serial(PortName);
+    disp('Done.')
+elseif  strcmp(answer{3}, 'Bluetooth')
+    disp('Connecting to Bluetooth port...');
+    s = Bluetooth(PortName, 1);
+    disp('Done.')
+else
+    disp('No appropriate communicate type is selected');
+end
 % set(s,'DataBits', 8);
 % set(s,'StopBits', 1);
 % s.ReadAsyncMode = 'continuous';
@@ -55,11 +65,11 @@ set(h_axes1, 'xtick', [0:Fs:timepoints], 'xticklabel', [0:sec]);
 % Initial plot
 hold on;
 h_plot1 = plot(1:timepoints, zeros(1,timepoints));
-h_line = line([0 0], [-5 10], 'Color', [1 0.5 0.5], 'LineWidth', 2);
+h_line = line([0 0], [0 6], 'Color', [1 0.5 0.5], 'LineWidth', 2);
 
 
 % Vertical limit
-ylim(h_axes1, [-5 5]);
+ylim(h_axes1, [0 6]);
 
 % Create xlabel
 xlabel('Time','FontWeight','bold','FontSize',14);
@@ -83,7 +93,7 @@ hold on;
 h_plot2 = plot(1:floor(freqLim/2-1), zeros(1, floor(freqLim/2-1)));
 
 % Vertical lim
-ylim(h_axes1, [0 100]);
+ylim(h_axes1, [0 7]);
 
 % Create xlabel
 xlabel('Frequency','FontWeight','bold','FontSize',14);
@@ -153,6 +163,7 @@ handles.h_plots.sec = sec;          % for axes1 (time)
 handles.h_plots.freqLim = freqLim;  % for axes2 (frequency)
 
 handles.Fs = Fs;
+handles.Comm = answer{3};           % Communication type
 
 set(startButton, 'Callback', {@startButton_Callback, handles});
 set(stopButton, 'Callback', {@stopButton_Callback, handles});
@@ -242,28 +253,39 @@ function startButton_Callback(hObj, event, handles)
             
             % --------------- Import data -----------------------    
             try
-                a = fscanf(s,'%s');     % read from Arduino
+                switch handles.Comm
+                    case 'Serial'
+                        a = fscanf(s,'%s');     % read from Arduino
+                    case 'Bluetooth'
+                        a = fgets(s);
+                        if size(a, 2) < 6
+                            continue;       % very crude, need improving
+                        end
+                end
                 assignin('base', 'mya', a);  
             catch
                 break;
             end
             
             % Detect weird string stored in a, ignore such value
-            if isempty(str2num(a))
-                    continue;
-            end
+%             if isempty(str2num(a))
+%                     continue;
+%             end
             
             try
-                voltage = str2num(a);
+%                 voltage = str2double(a(1:4))/1023*5;    % need improvement too
+                voltage = str2double(a(1:4));
                 buffer(point) = voltage;
                 
                 %  -------- Calculate power spectrum -----------------
                 if (rem(abs(point-indx),pointCalcSpec)==0)&&(firstTime == 1)    % calculation is only performed when the time comes
                     wind = [buffer(indx:end) buffer(1:(indx-1))];
+                    assignin('base', 'mywind', wind);
                     wind = wind - sign(mean(wind))*abs(mean(wind));             % Remove DC component
+%                     assignin('base', mywind, wind);
                     [sp, f] = PowerSpect(wind, Fs);                             % Calc power spectrum   
-                    assignin('base', 'myf', f);
-                    assignin('base', 'mysp', sp);
+                    
+%                     assignin('base', 'mysp', sp);
                     set(h_plot2, 'XData',  f(1:floor(freqLim/2-1)), 'YData', sp(1:floor(freqLim/2-1)));
                     indx = point;   % Update index
                     
