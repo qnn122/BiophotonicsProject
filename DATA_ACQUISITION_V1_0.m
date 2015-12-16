@@ -120,6 +120,7 @@ if strcmp(get(hObject,'String'),'Connect') % currently disconnected
     try
        handles.s = s; % s chinh la handles.s 
        fopen(handles.s);
+       fwrite(handles.s, 'E');
        pause(0.2);
        %===================================================================
        delete(timerfindall);   % Delete Timers
@@ -163,7 +164,9 @@ function getDataUART(s)
  
  if (s.BytesAvailable>100)
      
+ %fwrite(s, 'E');
  data = fread(s,s.BytesAvailable);
+ %assignin('base', 'mydata', data);
  %===============================================
  
  % Data
@@ -193,26 +196,33 @@ function getDataUART(s)
  
  %-------------------------------------------------------------------------
  % khoi tao data
- nDataCH1 = [];
+%  nDataCH1 = [];
  
- synIndex = 1; % contro data
+%  synIndex = 1; % contro data
   
  % uint8_t UART_Header[5] = {0xFF,0x00}; // ky tu dac biet
- while (synIndex < (lenFrameData - 3))
-     if ((data(synIndex)==255)&&(data(synIndex+1)==0))
-         
-        nDataCH1 = [nDataCH1 (data(synIndex+3)*256+data(synIndex+2))]; % IR truoc
-         
-        synIndex = synIndex + 4;   % bo qua khung vua roi
-     else
-         synIndex = synIndex + 1;  % do dong bo
-     end
-     
- end
+%  while (synIndex < (lenFrameData - 3))
+%      if ((data(synIndex)==255)&&(data(synIndex+1)==0))
+%          
+%         nDataCH1 = [nDataCH1 (data(synIndex+3)*256+data(synIndex+2))]; % IR truoc
+%          
+%         synIndex = synIndex + 4;   % bo qua khung vua roi
+%      else
+%          synIndex = synIndex + 1;  % do dong bo
+%      end
+%      
+%  end
  %-------------------------------------------------------------------------
  
+ nDataCH1 = data;
+ 
  % save Data
- nDataCH1Save=[nDataCH1Save nDataCH1];
+ try
+    nDataCH1Save=[nDataCH1Save nDataCH1];
+ catch err
+     err
+ end
+ assignin('base', 'nDataCH1', nDataCH1); % tao trong workspace
  assignin('base', 'nDataCH1Save', nDataCH1Save); % tao trong workspace
  
  %-------------------------------------------------------------------------
@@ -251,7 +261,7 @@ function getDataUART(s)
  plot(handles.axes1,xTime,yDataCH1,'r-','LineWidth',2) ;
  
  
- axis(handles.axes1,[xmax-200 xmax 3 6]);
+ axis(handles.axes1,[xmax-200 xmax 0 6]);
    
  save('handles.mat', 'handles');
   %===============================================

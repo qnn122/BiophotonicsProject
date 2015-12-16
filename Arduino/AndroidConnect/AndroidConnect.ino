@@ -13,8 +13,8 @@ void setup() {
   TCCR1B = 0;
 
   // Set compare match register to desired timer count:
-  //OCR1A = 1999;   // fs = 100Hz, 10ms
-  OCR1A = 3999;   // fs = 50Hz, 20ms
+  OCR1A = 1999;   // fs = 100Hz, 10ms
+  //OCR1A = 3999;   // fs = 50Hz, 20ms
 
   // Turn on CTC mode:
   TCCR1B |= (1 << WGM12);
@@ -41,7 +41,7 @@ void loop() {
       case 'E':
         // interrupt function here
         FLAG = true; 
-      break;
+        break;
     }
   }
   
@@ -49,18 +49,15 @@ void loop() {
 
 ISR(TIMER1_COMPA_vect) {
   if (FLAG) {
-    Serial.print('s');
     //Serial.print(mapping(analogRead(A0), 0, 1023, 0, 5),2);
     int value = analogRead(A0);
-    float sendvalue = value*5/1023;
-    Serial.println(sendvalue);
-    
+    Serial.println(value);
+
     if (Serial.available() > 0) {
-      if (Serial.read() == 'Q') {
-        FLAG = false;
-        return; // leave start() when receive 'Q' command;
-      }
+      char re = Serial.read();
+      if (re == 'Q') return;
     }
+    
   } // if FLAG
 } // interrupt
 
