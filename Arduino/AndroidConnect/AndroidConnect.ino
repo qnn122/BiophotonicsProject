@@ -21,8 +21,8 @@ void loop() {
 void start() {
   while(1) {
     Serial.print('s');
-    Serial.print(floatMap(analogRead(A0), 0, 1023, 0, 5),2);
-    delay(20);
+    Serial.print(mapping(analogRead(A0), 0, 1023, 0, 5),2);
+    delay(10);
 
     if (Serial.available() > 0) {
       if (Serial.read() == 'Q') return; // leave start() when receive 'Q' command
@@ -31,7 +31,7 @@ void start() {
 }
 
 /*Map analog signal*/
-float floatMap(float x, float inMin, float inMax, float outMin, float outMax) {
+int mapping(int x, int inMin, int inMax, int outMin, int outMax) {
   return (x-inMin)*(outMax - outMin)/(inMax - inMin) + outMin;
 }
 

@@ -86,19 +86,31 @@ function PB_Connect_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 global t;
+global BT; 
+
+BT = 0; % Initially, Bluetooth is OFF
 
 if strcmp(get(hObject,'String'),'Connect') % currently disconnected
     
     % create t0 for begining
     assignin('base', 't0', 0); % tao trong workspace bien t0=0 de chuan bi lam 1 data moi
     
-    s = serial(get_stringPopup(handles.PU_ComPort)); % Lay chuoi cong com
+    chosenPort = get_stringPopup(handles.PU_ComPort);
+    if strcmp(chosenPort, 'Chau_HC-05');
+        BT = 1; % turn ON Bluetooth
+    end
+    
+    if BT 
+        s = Bluetooth(chosenPort, 1);
+    else % if the object is serial
+        s = serial(get_stringPopup(handles.PU_ComPort)); % Lay chuoi cong com
+        s.BaudRate = 9600;      % Bluetooth unable
+        s.DataBits = 8;
+        s.Parity   = 'none';
+        s.StopBit  = 1;
+    end
     
     s.InputBufferSize=20000;
-    s.BaudRate = 9600; 
-    s.DataBits = 8;
-    s.Parity   = 'none';
-    s.StopBit  = 1;
     s.BytesAvailableFcnCount = 1000;
     s.BytesAvailableFcnMode = 'terminator';
     %s.BytesAvailableFcnMode = 'byte'; %luc nay se don theo byte nhan duoc ma ngat
