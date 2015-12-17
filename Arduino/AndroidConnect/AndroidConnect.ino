@@ -2,7 +2,13 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
+
+//Global Variable
+unsigned int value;
 bool FLAG = false;
+
+void UART_Transfer_Frame(void);
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
@@ -42,22 +48,45 @@ void loop() {
         // interrupt function here
         FLAG = true; 
         break;
+      case 'Q':
+        //cli();
+        FLAG = false;
+        break; 
     }
   }
   
 }   // loop()
 
 ISR(TIMER1_COMPA_vect) {
+  extern unsigned int value;
+  
   if (FLAG) {
     //Serial.print(mapping(analogRead(A0), 0, 1023, 0, 5),2);
-    int value = analogRead(A0);
-    Serial.println(value);
-
-    if (Serial.available() > 0) {
-      char re = Serial.read();
-      if (re == 'Q') return;
-    }
-    
+    value = analogRead(A0);
+    UART_Transfer_Frame();
   } // if FLAG
+  
 } // interrupt
+
+void UART_Transfer_Frame(void) {
+  extern unsigned int value;
+
+  // Initialize UART packet
+  unsigned char UARTPacket[4] = {0};
+
+  // Assign Packet header
+  UARTPacket[0] = {0xff};
+  UARTPacket[1] = {0x00};
+
+  // Assign Packet data
+  UARTPacket[2] = (value & 0x00FF);       // lower byte of data
+  UARTPacket[3] = (value & 0xFF00) >> 8;  // upper byte of data
+
+  // Send data to serial port
+  //Serial.println((const char *)UARTPacket);
+  Serial.write(UARTPacket, 4);
+  //for (int i = 0; i<4; i++) 
+    //Serial.write(UARTPacket[i]);
+}
+
 

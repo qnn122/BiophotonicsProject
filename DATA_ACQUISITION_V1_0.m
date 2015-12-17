@@ -160,7 +160,7 @@ function getDataUART(s)
  persistent  yDataCH1;
  persistent  nDataCH1Save;
  
- 
+ disp(['Bytes Available: ' num2str(s.BytesAvailable)]);
  
  if (s.BytesAvailable>100)
      
@@ -184,7 +184,7 @@ function getDataUART(s)
  % Initial variable
  if  (t0==0) 
     
-    nPts = 5000;       % number of points to display on stripchart
+    nPts = 3000;       % number of points to display on stripchart
     xTime = ones(1,nPts)*NaN;
     yDataCH1 = ones(1,nPts)*NaN;
     
@@ -196,33 +196,31 @@ function getDataUART(s)
  
  %-------------------------------------------------------------------------
  % khoi tao data
-%  nDataCH1 = [];
+ nDataCH1 = [];
  
-%  synIndex = 1; % contro data
+ synIndex = 1; % contro data
   
- % uint8_t UART_Header[5] = {0xFF,0x00}; // ky tu dac biet
-%  while (synIndex < (lenFrameData - 3))
-%      if ((data(synIndex)==255)&&(data(synIndex+1)==0))
-%          
-%         nDataCH1 = [nDataCH1 (data(synIndex+3)*256+data(synIndex+2))]; % IR truoc
-%          
-%         synIndex = synIndex + 4;   % bo qua khung vua roi
-%      else
-%          synIndex = synIndex + 1;  % do dong bo
-%      end
-%      
-%  end
+%  uint8_t UART_Header[5] = {0xFF,0x00}; % ky tu dac biet
+ while (synIndex < (lenFrameData - 3))
+     if ((data(synIndex)==255)&&(data(synIndex+1)==0))
+         
+        nDataCH1 = [nDataCH1 (data(synIndex+3)*256+data(synIndex+2))]; % IR truoc
+         
+        synIndex = synIndex + 4;   % bo qua khung vua roi
+     else
+         synIndex = synIndex + 1;  % do dong bo
+     end
+     
+ end
  %-------------------------------------------------------------------------
- 
- nDataCH1 = data;
- 
+  
  % save Data
  try
     nDataCH1Save=[nDataCH1Save nDataCH1];
  catch err
      err
  end
- assignin('base', 'nDataCH1', nDataCH1); % tao trong workspace
+ %assignin('base', 'nDataCH1', nDataCH1); % tao trong workspace
  assignin('base', 'nDataCH1Save', nDataCH1Save); % tao trong workspace
  
  %-------------------------------------------------------------------------

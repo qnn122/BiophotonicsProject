@@ -9,6 +9,7 @@ answer = inputdlg(prompt, 'Input', 1, def);
 
 % Open port
 s = serial(answer{1}, 'Baudrate', 9600);
+set(s, 'Timeout', 2);
 fopen(s);
 
 % Create handles
@@ -34,7 +35,11 @@ end
 
 function readButton_Callback(hObj, event, handles)
     s = handles.serialPort;
-    a = fscanf(s, '%s')
+%     a = fscanf(s, '%s')
+    fwrite(s, 'E');
+    pause(1);
+    s.BytesAvailable
+    a = fread(s, s.BytesAvailable);
     assignin('base', 'mya', a);
     
 end
