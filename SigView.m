@@ -242,6 +242,9 @@ function startButton_Callback(hObj, event, handles)
         disp('Port is opened. Importing data');
         handles.stop = 0;
         
+        % Command Arduino to start importing data
+        fwrite(s, 'E');
+        
         while 1
             tStart = tic;
             % ---------- Automatically adjust horizontal axes -----
@@ -258,12 +261,14 @@ function startButton_Callback(hObj, event, handles)
                         a = fscanf(s,'%s');     % read from Arduino
                     case 'Bluetooth'
                         a = fgets(s);
+                        a = a(2:end);
                         if size(a, 2) < 6
                             continue;       % very crude, need improving
                         end
                 end
                 assignin('base', 'mya', a);  
-            catch
+            catch err
+                err
                 break;
             end
             

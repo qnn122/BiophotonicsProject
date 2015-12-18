@@ -120,6 +120,7 @@ if strcmp(get(hObject,'String'),'Connect') % currently disconnected
     try
        handles.s = s; % s chinh la handles.s 
        fopen(handles.s);
+       fwrite(handles.s, 'E');
        pause(0.2);
        %===================================================================
        delete(timerfindall);   % Delete Timers
@@ -159,11 +160,13 @@ function getDataUART(s)
  persistent  yDataCH1;
  persistent  nDataCH1Save;
  
- 
+ disp(['Bytes Available: ' num2str(s.BytesAvailable)]);
  
  if (s.BytesAvailable>100)
      
+ %fwrite(s, 'E');
  data = fread(s,s.BytesAvailable);
+ %assignin('base', 'mydata', data);
  %===============================================
  
  % Data
@@ -181,7 +184,7 @@ function getDataUART(s)
  % Initial variable
  if  (t0==0) 
     
-    nPts = 5000;       % number of points to display on stripchart
+    nPts = 3000;       % number of points to display on stripchart
     xTime = ones(1,nPts)*NaN;
     yDataCH1 = ones(1,nPts)*NaN;
     
@@ -197,7 +200,7 @@ function getDataUART(s)
  
  synIndex = 1; % contro data
   
- % uint8_t UART_Header[5] = {0xFF,0x00}; // ky tu dac biet
+%  uint8_t UART_Header[5] = {0xFF,0x00}; % ky tu dac biet
  while (synIndex < (lenFrameData - 3))
      if ((data(synIndex)==255)&&(data(synIndex+1)==0))
          
@@ -210,9 +213,14 @@ function getDataUART(s)
      
  end
  %-------------------------------------------------------------------------
- 
+  
  % save Data
- nDataCH1Save=[nDataCH1Save nDataCH1];
+ try
+    nDataCH1Save=[nDataCH1Save nDataCH1];
+ catch err
+     err
+ end
+ %assignin('base', 'nDataCH1', nDataCH1); % tao trong workspace
  assignin('base', 'nDataCH1Save', nDataCH1Save); % tao trong workspace
  
  %-------------------------------------------------------------------------
@@ -251,7 +259,7 @@ function getDataUART(s)
  plot(handles.axes1,xTime,yDataCH1,'r-','LineWidth',2) ;
  
  
- axis(handles.axes1,[xmax-200 xmax 3 6]);
+ axis(handles.axes1,[xmax-200 xmax 0 6]);
    
  save('handles.mat', 'handles');
   %===============================================
