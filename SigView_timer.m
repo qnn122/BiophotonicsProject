@@ -64,7 +64,7 @@ set(h_axes1, 'xtick', [0:Fs:timepoints], 'xticklabel', [0:sec]);
 
 % Initial plot
 hold on;
-h_plot1 = plot(1:timepoints, zeros(1,timepoints));
+%h_plot1 = plot(1:timepoints, zeros(1,timepoints));
 % h_line = line([0 0], [0 6], 'Color', [1 0.5 0.5], 'LineWidth', 2);
 
 
@@ -94,19 +94,19 @@ h_plot2 = plot(1:floor(freqLim/2-1), zeros(1, floor(freqLim/2-1)));
 
 
 % Create xlabel
-xlabel('Frequency','FontWeight','bold','FontSize',14);
+xlabel('Time','FontWeight','bold','FontSize',14);
 
 % Create ylabel
-ylabel('Amplitude','FontWeight','bold','FontSize',14);
+%ylabel('Voltage','FontWeight','bold','FontSize',14);
 
 % Create title
-title('Power Spectrum','FontSize',15);
+title('Result','FontSize',15);
 
 
 %% Start button
 startButton = uicontrol('Parent', h_fig,...
             'Units', 'normalized',...
-            'Position', [.75 .3 .15 .15],...
+            'Position', [.75 .52 .15 .12],...
             'Style', 'pushbutton',...
             'String', 'START',...
             'FontSize', 18);
@@ -114,9 +114,17 @@ startButton = uicontrol('Parent', h_fig,...
 %% Stop button
 stopButton = uicontrol('Parent', h_fig,...
             'Units', 'normalized',...
-            'Position', [.75 .5 .15 .15],...
+            'Position', [.75 .36 .15 .12],...
             'Style', 'pushbutton',...
             'String', 'STOP',...
+            'FontSize', 18);
+        
+%% Analyzing button
+analyzeButton = uicontrol('Parent', h_fig,...
+            'Units', 'normalized',...
+            'Position', [.75 .2 .15 .12],...
+            'Style', 'pushbutton',...
+            'String', 'ANALYZE',...
             'FontSize', 18);
         
 %% Hear reate panel
@@ -140,9 +148,9 @@ h_text2 = uicontrol('Parent', h_fig, ...
         
 h_text3 = uicontrol('Parent', h_fig, ...
             'Units', 'normalized',...
-            'Position', [.75 .1 .15 .1],...
+            'Position', [.75 .05 .15 .08],...
             'Style', 'text',...
-            'String', 'Initializing... Please wait.',...
+            'String', 'Ready',...
             'FontSize', 10, ...
             'FontWeight', 'bold', ...
             'BackgroundColor', [1 1 1]);     
@@ -153,8 +161,8 @@ h_text3 = uicontrol('Parent', h_fig, ...
 handles.h_axes.axes1 = h_axes1;
 handles.h_axes.axes2 = h_axes2;
 
-handles.h_plots.plot1 = h_plot1;
-handles.h_plots.plot2 = h_plot2;
+%handles.h_plots.plot1 = h_plot1;
+%handles.h_plots.plot2 = h_plot2;
 % handles.h_plots.line = h_line;
 
 handles.h_text = h_text;
@@ -167,6 +175,7 @@ handles.Comm = answer{3};           % Communication type
 
 set(startButton, 'Callback', {@startButton_Callback, handles});
 set(stopButton, 'Callback', {@stopButton_Callback, handles});
+set(analyzeButton, 'Callback', {@analyzeButton_Callback, handles});
     
 %% Creat timer   
 %  t = timer('TimerFcn', {@timer_Callback, serialPort}, ...
@@ -177,6 +186,12 @@ end
 
 function startButton_Callback(hObj, event, handles)
     global t;
+    
+    % clear all previous plot
+    cla(handles.h_axes.axes1)
+    
+    % create t0 for begining
+    assignin('base', 't0', 0); % t0 = 0 -> new data
     
     s = handles.serialPort;
     
@@ -208,100 +223,132 @@ function startButton_Callback(hObj, event, handles)
 end % stopButton function
 
 function timer_Callback(hObject, event, handles)
-%     persistent count time volt lastvolt     % Count is used for automatically adjust horizontall axes
-%     persistent timeShift
-%     
-%     % For storing data
-    persistent buffer  buffsize     % Buffer to store incoming data
-    persistent bufferInd  isBuffFull      % Index of buffer, update new data to buffer
-%     persistent firstTime    % Flag that labels whether the first round of buffer has been filled or not
-%     persistent wind         % window to calculate power spectrum
-%     persistent indx         % Index of power spectrum calculation
-% 
-%     persistent sp f t       % for power spectrum calculation
-%     persistent tStart tElapsed      % For timing
-%     
-%     % Initializing variables
-%     if isempty(lastvolt), lastvolt = nan; end  
-%     if isempty(point), point = 1; end 
-%     if isempty(indx), indx = 2; end
-%     if isempty(firstTime), firstTime = 0; end   % 0 means the first time has not been reached, no calculation takes place
-%     
-%     %
-%     s = handles.serialPort;
-%     name = get(s, 'Name');
-%     disp(['Port name ' name]);
-%     
-%     % return handles
+  % global variables in that persistent variables are known only to the
+ % function in which they are declared.
+    persistent  nPts;
+    persistent  xTime;
+    persistent  yDataCH1;
+    persistent  nDataCH1Save;
+    
+    % Handles
     h_axes1 = handles.h_axes.axes1;
-    h_plot1 = handles.h_plots.plot1;
-%     h_plot2 = handles.h_plots.plot2;
-%     h_line = handles.h_plots.line;
-%     h_text = handles.h_text;
-%     h_text3 = handles.h_text3;
-%     
-%     sec = handles.h_plots.sec;
-%     freqLim = handles.h_plots.freqLim;
-%     Fs = handles.Fs
-    disp('reach 1');
-    persistent lenData
-    persistent timepoints
-    if isempty(timepoints)
-        timepoints = length(get(h_plot1, 'XData'));
-    end
-    
-    % Initialize buffer-related variables
-    disp('reach 2');
-    if isempty(buffer)|isempty(bufferInd)|isempty(isBuffFull);
-        buffer = zeros(1,timepoints);
-        bufferInd = 1;
-        isBuffFull = 0;
-    end
-
-    % =============
-    disp('reach 3');
+    h_text3 = handles.h_text3;
     s = handles.serialPort;
+    
+    %disp(['Bytes Available: ' num2str(s.BytesAvailable)]);
 
-    disp(['BytesAvailable: ' num2str(s.BytesAvailable)]);
+    if (s.BytesAvailable>100)
 
+    %fwrite(s, 'E');
+    data = fread(s,s.BytesAvailable);
+    %assignin('base', 'mydata', data);
+    %===============================================
+
+    % Detect NaN value
+    fNaN=find(isnan(data)==1); 
+    if (~isempty(fNaN))
+        for i=1:length(fNaN)%lenLaser %length(fNaN)
+            data(fNaN(i))=0;
+        end
+    end 
+
+    %------------------------------------------------------------------
+    % t0 for reset
+    t0 = evalin('base', 't0'); % read from workspace
+    
+    
+    % Initial variable
+    if  (t0==0) 
+        nPts = 1000;       % number of points to display on stripchart
+        xTime = ones(1,nPts)*NaN;
+        yDataCH1 = ones(1,nPts)*NaN;
+        nDataCH1Save=[];    
+    end
+
+    lenFrameData=length(data);
+    
+    if (t0 < nPts)
+        set(h_text3, 'String', 'Calibrating....');
+    else
+        set(h_text3, 'String', 'Ready for Analyzing');
+    end
+
+    %-------------------------------------------------------------------------
+    % Initializing output data
+    nDataCH1 = [];
+
+    synIndex = 1; % data index
+
+    %  uint8_t UART_Header[5] = {0xFF,0x00}; 
+    while (synIndex < (lenFrameData - 3))
+     if ((data(synIndex)==255)&&(data(synIndex+1)==0))  % Condition for detecting UART frame
+
+        nDataCH1 = [nDataCH1 (data(synIndex+3)*256+data(synIndex+2))];
+
+        synIndex = synIndex + 4;   % 
+     else
+         synIndex = synIndex + 1;  
+     end
+
+    end
+    %-------------------------------------------------------------------------
+
+    % save Data
     try
-        data = fread(s,s.BytesAvailable);
+        nDataCH1Save=[nDataCH1Save nDataCH1];
     catch err
-        disp('Program has stopped');
+        err
     end
+    %assignin('base', 'nDataCH1', nDataCH1); % tao trong workspace
+    assignin('base', 'nDataCH1Save', nDataCH1Save); % tao trong workspace
 
-    lenData = length(data);
+    %-------------------------------------------------------------------------
+    lenData = length(nDataCH1); % du lieu that data
+
+    % Update the plot, initial t0=0 in workspace
+    % t1=length(TimeSecond);
+    time = t0:1:t0+lenData-1;
+    t0 = t0+lenData; % update thoi diem luc sau
+    assignin('base', 't0', t0); % tao trong workspace
+
+
+    % fix up data to change plot
+    xTime(1:end-lenData) = xTime(lenData+1:end);  % shift old data left
+    xTime(end-lenData+1:end) = time;        % new data goes on right
+
+    % channel 1
+    yDataCH1(1:end-lenData) = yDataCH1(lenData+1:end);  % shift old data left
+    yDataCH1(end-lenData+1:end) = 0 + 1*nDataCH1*5/1023;
+
+
+    % theo doi trong matlab
+    assignin('base', 'yDataCH1', yDataCH1); % tao trong workspace
+    assignin('base', 'xTime', xTime); % tao trong workspace
+
+
+    %-------------------------------------------------------------------------
+    xmax=max(xTime);
+
+    %-------------------------------------------------------------------------
+    % plot in MATLAB
+    set(h_axes1,'NextPlot','add'); % lenh hold on trong GUI
+    grid(h_axes1, 'on');
+    %set(handles.axes1,'NextPlot','new'); % lenh new
+
+    plot(h_axes1,xTime,yDataCH1,'r-','LineWidth',2) ;
+
     
-    if lenData > timepoints
-        return;
-    end
-    disp(['Number of values: ' num2str(lenData)]);
-    disp('************');
-    assignin('base', 'mydata', data);
-    % =================
+    % Update Y axes
+    window = yDataCH1((end-500):end);
+    set(h_axes1, 'Xlim', [xmax-1000 xmax], ...
+                'Ylim', [(min(window)-0.5) (max(window)+0.5)]);
     
-    
-    %% Update buffer
-    disp('reach 3');  
-%     if isBuffFull   % only update tail part
-%         buffer(1:(end-lenData)) = buffer((lenData + 1):end);
-%         buffer((end - lenData + 1):end) = data*5/1023;
-%     else            % update until it's full
-%         disp('reach 3b');
-%         buffer(bufferInd:lenData) = data;
-%         bufferInd = bufferInd + lenData;
-%         if bufferInd >= timepoints
-%             isBuffFull = 1;
-%         end
-%     end
-    buffer(1:(end-lenData)) = buffer((lenData + 1):end);
-    buffer((end - lenData + 1):end) = data*5/1023;
-    
-    assignin('base', 'myBuffer', buffer);
-    
-    disp('reach 4');
-    set(h_plot1, 'XData', [1:timepoints], 'YData', buffer);
-        
+    %axis(h_axes1,[xmax-500 xmax 0 6]);
+
+    save('handles.mat', 'handles');
+    %===============================================
+end % if BytesAvailable > 100
+
 end
 
 function stopButton_Callback(hObj, event, handles)
@@ -316,6 +363,39 @@ function stopButton_Callback(hObj, event, handles)
     end
     
 end
+
+function analyzeButton_Callback(hObj, event, handles)
+    %% Stop recording first
+     s = handles.serialPort;
+    
+    % Close port
+    if strcmp(get(s, 'Status'), 'closed')
+        disp('Port is already closed. Please open the port first');
+    else
+        fclose(s);
+        disp('Port is closed');
+    end
+    
+    %% Then calculation
+    % handles for output
+    h_text = handles.h_text;    % heart rate
+    h_axes2 = handles.h_axes.axes2;
+    
+    % Read data from workspace
+    sig = evalin('base', 'yDataCH1');
+    time = evalin('base', 'xTime');
+    
+    % Calc heart rate and perform other analyzing
+    [y, HR] = calcHR(sig);
+    
+    % Display result
+    cla(h_axes2)
+    plot(h_axes2, time, y);
+    axis tight
+    set(h_text, 'String', num2str(HR));
+    
+end
+
 
 function deleteFigure_Callback(hObj, event, handles)
     s = handles.serialPort;

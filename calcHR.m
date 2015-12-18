@@ -1,18 +1,19 @@
-function heartRate = calcHR(x)
+function [y, heartRate] = calcHR(x)
 % FUNCTION CALCHR(X) calculate heart rate according to .... algorithm
 %
 % In:
 %   x : data vector
 %
 % Out:
+%   y: filtered, smooth data
 %   heartRate: heart rate
 
 
 %% Initializing
 data=x;
 L=length(data); 
-fs=L/50;
-n=L;x=x-mean(x);
+fs=L/10;
+x=x-mean(x);
 
 %% Pre-processing
 fNorm = [1 40] / (fs/2);         %normalized cutoff frequency
@@ -21,6 +22,8 @@ type='bandpass';    N=2;
 y = filtfilt(b, a, x);
 y=y';
 y=y/max(y);
+y = smooth(y, 7);
+
 
 
 %% R peaks enhancing
@@ -40,6 +43,11 @@ y_slope=y_slope2; % choose slope2
 Thres1_R=mean(pks);
 R1=find(pks>=Thres1_R);
 R2=locs(R1(:));
+
+assignin('base', 'pks', pks);
+assignin('base', 'locs', locs);
+assignin('base', 'R1', R1);
+assignin('base', 'R2', R2);
 
 %% Heartbeat Threshold
 RR=diff(R2);
