@@ -9,8 +9,8 @@ clear all
 close all
 
 %% Create input dialog, enter port name and sampling frequency
-prompt = {'Enter port name: ', 'Sampling Frequency: ', 'Communication type (Serial or Bluetooth): '};
-def = {'Chau_HC-05', '200', 'Bluetooth'};
+prompt = {'Enter port name: ', 'Communication type (Serial or Bluetooth): '};
+def = {'Chau_HC-05', 'Bluetooth'};
 answer = inputdlg(prompt, 'Input', 1, def);
 
 if isempty(answer)
@@ -20,11 +20,11 @@ end
 
 %% Create Serial Port
 PortName = answer{1};
-if strcmp(answer{3}, 'Serial')
+if strcmp(answer{2}, 'Serial')
     disp('Connecting to serial port...');
     s = serial(PortName);
     disp('Done.')
-elseif  strcmp(answer{3}, 'Bluetooth')
+elseif  strcmp(answer{2}, 'Bluetooth')
     disp('Connecting to Bluetooth port...');
     s = Bluetooth(PortName, 1);
     s.InputBufferSize = 20000;
@@ -64,7 +64,7 @@ set(h_axes1, 'xtick', [0:Fs:timepoints], 'xticklabel', [0:sec]);
 
 % Initial plot
 hold on;
-h_plot1 = plot(1:timepoints, zeros(1,timepoints));
+%h_plot1 = plot(1:timepoints, zeros(1,timepoints));
 % h_line = line([0 0], [0 6], 'Color', [1 0.5 0.5], 'LineWidth', 2);
 
 
@@ -171,7 +171,7 @@ handles.h_plots.sec = sec;          % for axes1 (time)
 handles.h_plots.freqLim = freqLim;  % for axes2 (frequency)
 
 handles.Fs = Fs;
-handles.Comm = answer{3};           % Communication type
+handles.Comm = answer{2};           % Communication type
 
 set(startButton, 'Callback', {@startButton_Callback, handles});
 set(stopButton, 'Callback', {@stopButton_Callback, handles});
@@ -234,7 +234,6 @@ function timer_Callback(hObject, event, handles)
     h_axes1 = handles.h_axes.axes1;
     h_text3 = handles.h_text3;
     s = handles.serialPort;
-    Fs = handles.Fs;
     
     %disp(['Bytes Available: ' num2str(s.BytesAvailable)]);
 
@@ -308,13 +307,13 @@ function timer_Callback(hObject, event, handles)
     assignin('base', 'nDataCH1Save', nDataCH1Save); % tao trong workspace
 
     %-------------------------------------------------------------------------
-    lenData = length(nDataCH1); % "real" data, will be plot
+    lenData = length(nDataCH1); % du lieu that data
 
     % Update the plot, initial t0=0 in workspace
     % t1=length(TimeSecond);
     time = t0:1:t0+lenData-1;
-    t0 = t0+lenData; % update time
-    assignin('base', 't0', t0); 
+    t0 = t0+lenData; % update thoi diem luc sau
+    assignin('base', 't0', t0); % tao trong workspace
 
 
     % fix up data to change plot
@@ -336,11 +335,11 @@ function timer_Callback(hObject, event, handles)
 
     %-------------------------------------------------------------------------
     % plot in MATLAB
-%     set(h_axes1,'NextPlot','add'); %
+    set(h_axes1,'NextPlot','add'); % lenh hold on trong GUI
     grid(h_axes1, 'on');
-%     set(h_axes1,'NextPlot','new'); %
+    %set(handles.axes1,'NextPlot','new'); % lenh new
 
-    plot(h_axes1, xTime,yDataCH1,'b-','LineWidth',2) ;
+    plot(h_axes1,xTime,yDataCH1,'b-','LineWidth',2) ;
 
     
     % Update Y axes
@@ -348,6 +347,8 @@ function timer_Callback(hObject, event, handles)
     set(h_axes1, 'Xlim', [xmax-1000 xmax], ...
                 'Ylim', [(min(window)-0.5) (max(window)+0.5)]);
     
+    %axis(h_axes1,[xmax-500 xmax 0 6]);
+
     save('handles.mat', 'handles');
     %===============================================
 end % if BytesAvailable > 100
@@ -380,8 +381,7 @@ function analyzeButton_Callback(hObj, event, handles)
     end
     
     %% Then calculation
-    % handles for output
-    Fs = handles.Fs
+    % handles for outputv
     h_text = handles.h_text;    % heart rate
     h_axes2 = handles.h_axes.axes2;
     
@@ -390,16 +390,16 @@ function analyzeButton_Callback(hObj, event, handles)
     time = evalin('base', 'xTime');
     
     % Calc heart rate and perform other analyzing
-    [y, HR, peakLoc] = calcHR(sig, Fs);
+    [y, HR, peakLoc] = calcHR(sig);
     peakLoc(find(peakLoc>1000)) = [];   % reject all peak locations that are out of bound
     assignin('base', 'peakLoc', peakLoc);
     
     % Display result
     cla(h_axes2)
-    plot(h_axes2, time/Fs, sig); 
+    plot(h_axes2, time, sig); 
     hold on;
-    plot(h_axes2, time/Fs, y+mean(sig), '--', 'Color', [1 0.5 0.5], 'LineWidth',3);
-    plot(h_axes2, (peakLoc+time(1))/Fs, sig(peakLoc), 'gx', 'MarkerSize', 15, 'LineWidth',2);
+    plot(h_axes2, time, y+mean(sig), '--', 'Color', [1 0.5 0.5], 'LineWidth',3);
+    plot(h_axes2, peakLoc+time(1), sig(peakLoc), 'gx', 'MarkerSize', 15, 'LineWidth',2);
     axis tight
     set(h_text, 'String', num2str(HR));
     

@@ -1,9 +1,9 @@
-function [y, heartRate, peakLoc] = calcHR(x, fs)
+function [y, heartRate, peakLoc] = calcHR(x)
 % FUNCTION CALCHR(X) calculate heart rate according to .... algorithm
 %
 % In:
 %   x : data vector
-%   fs: Sampling Frequency
+
 %
 % Out:
 %   y: filtered, smooth data
@@ -14,6 +14,7 @@ function [y, heartRate, peakLoc] = calcHR(x, fs)
 data=x;
 L=length(data); 
 % fs=L/20;
+fs = 200;
 x=x-mean(x);
 
 %% Pre-processing

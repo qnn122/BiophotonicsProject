@@ -3,11 +3,13 @@ function [RR2]=SPO2_test(x)
 %load('D:\2015-2016\Semester I\BME Capstone Design Course\LAB\PROJECT\DATA\Subject3\x1')
 data=x;
 L=length(data); 
-fs=L/50;
+% fs=L/50;
+fs = 200;
 n=L;x=x-mean(x);
 
 %% Pre-processing
-fNorm = [1 40] / (fs/2);         %normalized cutoff frequency
+% fNorm = [1 40] / (fs/2);         %normalized cutoff frequency
+fNorm = [1 10] / (fs/2);
 type='bandpass';N=2;
 [b,a] = butter(N, fNorm, type);  % 10th order filter
 y = filtfilt(b, a, x);Y=y;
@@ -87,7 +89,6 @@ end
 RR2=diff(R);RRavg2=mean(RR2);
 RRmin2=round(0.92*RRavg2);RRmax2=round(1.16*RRavg2);
 range2=[RRmin2 RRmax2];
-RR2
 
 
 R=[R' y(R(:))];
